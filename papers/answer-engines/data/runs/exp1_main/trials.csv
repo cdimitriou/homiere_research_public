@@ -1,0 +1,45 @@
+entity,tier,condition,treatment,rep,adopt_rate,persist_rate,abstains,n_tool_queries,forced_answer
+Redfin,high,no_search,baseline,0,0.45454545454545453,1.0,False,0,False
+Redfin,high,search,novel,0,0.25,,False,10,True
+Redfin,high,search,consistent,0,1.0,,False,15,False
+Redfin,high,search,contradicting,0,1.0,0.0,False,16,True
+Zillow,high,no_search,baseline,0,0.5,1.0,False,0,False
+Zillow,high,search,novel,0,0.0,,False,10,False
+Zillow,high,search,consistent,0,1.0,,False,4,False
+Zillow,high,search,contradicting,0,1.0,0.0,False,7,False
+Keller Williams,high,no_search,baseline,0,0.3333333333333333,1.0,False,0,False
+Keller Williams,high,search,novel,0,0.2,,False,22,False
+Keller Williams,high,search,consistent,0,1.0,,False,21,True
+Keller Williams,high,search,contradicting,0,1.0,0.0,False,14,False
+Angi,high,no_search,baseline,0,0.36363636363636365,1.0,False,0,False
+Angi,high,search,novel,0,0.75,,False,20,True
+Angi,high,search,consistent,0,1.0,,False,9,False
+Angi,high,search,contradicting,0,1.0,0.0,False,8,False
+Thumbtack,high,no_search,baseline,0,0.3,1.0,False,0,False
+Thumbtack,high,search,novel,0,0.75,,False,12,False
+Thumbtack,high,search,consistent,0,0.75,,False,12,False
+Thumbtack,high,search,contradicting,0,1.0,0.0,False,12,False
+Opendoor,high,no_search,baseline,0,0.3333333333333333,1.0,False,0,False
+Opendoor,high,search,novel,0,0.25,,False,14,True
+Opendoor,high,search,consistent,0,1.0,,False,12,False
+Opendoor,high,search,contradicting,0,0.6666666666666666,0.5,False,8,False
+TaskRabbit,high,no_search,baseline,0,0.25,1.0,False,0,False
+TaskRabbit,high,search,novel,0,0.4,,True,21,True
+TaskRabbit,high,search,consistent,0,1.0,,True,10,False
+TaskRabbit,high,search,contradicting,0,1.0,0.0,True,14,False
+Harrowfield & Vance Realty,zero,no_search,baseline,0,0.0,,True,0,False
+Harrowfield & Vance Realty,zero,search,novel,0,1.0,,False,1,False
+Tidecrest Home Concierge,zero,no_search,baseline,0,0.0,,True,0,False
+Tidecrest Home Concierge,zero,search,novel,0,0.8333333333333334,,False,1,False
+Bellhaven & Croft Property Group,zero,no_search,baseline,0,0.0,,True,0,False
+Bellhaven & Croft Property Group,zero,search,novel,0,0.875,,False,1,False
+Marrow Lane Home Inspections,zero,no_search,baseline,0,0.0,,True,0,False
+Marrow Lane Home Inspections,zero,search,novel,0,0.75,,False,1,False
+Quillfeather Realty Collective,zero,no_search,baseline,0,0.0,,True,0,False
+Quillfeather Realty Collective,zero,search,novel,0,1.0,,False,2,False
+Stonewick Move Managers,zero,no_search,baseline,0,0.0,,True,0,False
+Stonewick Move Managers,zero,search,novel,0,1.0,,False,1,False
+Veranda Nest Staging Co.,zero,no_search,baseline,0,0.0,,True,0,False
+Veranda Nest Staging Co.,zero,search,novel,0,1.0,,False,2,False
+Ashcombe & Reyes Estates,zero,no_search,baseline,0,0.0,,True,0,False
+Ashcombe & Reyes Estates,zero,search,novel,0,1.0,,False,1,False

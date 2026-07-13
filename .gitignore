@@ -1,0 +1,30 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Data artifacts (raw model outputs kept in-repo for reproducibility; large scraped sets excluded)
+data/runs/**/*.tmp
+.venv/
+
+# LaTeX build artifacts (keep paper.pdf and figures/ tracked)
+**/paper/*.aux
+**/paper/*.log
+**/paper/*.out
+**/paper/*.bbl
+**/paper/*.blg
+**/paper/*.bcf
+**/paper/*.run.xml
+**/paper/*.fdb_latexmk
+**/paper/*.fls
+**/paper/*.synctex.gz
+
+# Local tooling
+.claude/
+.pytest_cache/

@@ -1,0 +1,789 @@
+[
+  {
+    "area": "knowledge-conflict",
+    "synthesis": "The context-memory knowledge-conflict literature has converged on a consistent core picture between 2021 and 2025, with one major methodological correction along the way. Early entity-substitution work (Longpre et al., EMNLP 2021) found models frequently ignore conflicting context in favor of memorized answers, with memorization ratio growing from <15% to >=50% as models scale 60M->11B and worst for popular entities and numeric answers. Xie et al. (ICLR 2024) showed much of that stubbornness was an artifact of incoherent substituted contexts: when the conflicting evidence is a coherent, natural passage, models readily follow it \u2014 but exhibit strong confirmation bias under mixed evidence (ChatGPT memorization ratio 30.0%->86.2% as parametric-supporting evidence share rises 33%->67%; GPT-4 ~80% memorization on popular questions) and order effects up to 30%. Kortukov et al. (COLM 2024) pushed further toward realism: with real factual documents correcting wrong parametric answers, retention of the parametric answer collapses to ~0.1-6.2%, and the residual failures are largely explained by a 'parametric bias' \u2014 the model's own wrong answer appearing anywhere in the context raises update-failure likelihood by 1-11 points. ClashEval (NeurIPS 2024 D&B) quantified the reverse risk: frontier models abandon CORRECT priors for incorrect retrieved content >60% of the time, with adoption falling smoothly as perturbations become implausible and rising when closed-book token-probability confidence is low.\n\nThe moderators most relevant to AEO are now well-established. (1) Entity popularity / training-data frequency: Mallen et al. (ACL 2023, PopQA 14k questions) showed parametric accuracy tracks Wikipedia pageviews (davinci-003: 35% overall vs 19% on the least-popular 4k) and retrieval only pays off below a popularity threshold; Du et al. (ACL 2024) formalized this with susceptibility scores, finding susceptibility negatively correlates with training-corpus co-occurrence (rho=-0.23) and that fabricated entities are significantly more context-susceptible than real ones. Implication: for long-tail/unknown entities (most SMB websites), the retrieved document essentially IS the model's belief \u2014 the conflict battle matters mainly for popular entities. (2) Evidence plausibility: ClashEval's graded perturbations show a dose-response curve of adoption vs deviation from truth. (3) Evidence features: Wan et al. (ACL 2024, ConflictingQA: 238 queries, 2,208 real paragraphs) found win-rate is driven overwhelmingly by query-document relevance (embedding similarity), while human credibility markers \u2014 scientific references, neutral tone \u2014 have neutral-to-negative effects; trivially prepending question-relevant text raises a document's win-rate. (4) Confidence and scaffolding: Huang et al. (2024) show conflict arbitration is substantially steerable by prompting (SCR gives GPT-4o up to +24.2%), meaning answer-engine system prompts are a first-order determinant of context-vs-prior behavior. The standard measurement toolkit across these papers: closed-book probe -> conflict construction (substitution, LLM-generated counter-memory, graded perturbation, or real documents) -> open-book categorization into retain/correct-update/incorrect-update, with memorization ratio, adoption rate, win-rate, and KL/MI-based persuasion-susceptibility as metrics. Xu et al.'s EMNLP 2024 survey supplies the organizing taxonomy (context-memory, inter-context, intra-memory).",
+    "gaps": "(1) No study runs the full answer-engine loop: all of these papers stuff evidence directly into the prompt; none give the model a search TOOL it must invoke, with ranked result lists, snippets, URLs, and source metadata \u2014 our fully-controlled artificial search tool on Bedrock can measure whether rank position, snippet wording, domain name, and result count moderate context-vs-prior arbitration, which no one has done. (2) Source-identity effects are nearly unstudied: Wan et al. deliberately stripped source metadata, and no paper varies domain authority, brand recognition, URL structure, or site type (blog vs .gov vs vendor) as treatments in a knowledge-conflict design \u2014 the single most AEO-relevant manipulation is open. (3) The popularity moderator has never been tested on frontier commercial models in a conflict setting: Du et al. used Pythia <=12B with logprob metrics; Mallen et al. predates modern RAG assistants; nobody has crossed entity familiarity (real-popular vs real-longtail vs post-cutoff/fabricated entities, e.g., unknown businesses) with evidence manipulation on Claude/GPT-4o-class models \u2014 exactly our planned known-vs-unknown comparison. (4) Outcome metrics stop at answer accuracy; no paper measures the presentation layer AEO cares about \u2014 which source gets CITED or named, hedging language, whether both conflicting sources are surfaced \u2014 so 'share of voice in the answer' as a dependent variable is novel. (5) Conflicts studied are almost all verifiable facts (dates, dosages, capitals); commercial and comparative queries ('best CRM for realtors') where the model's prior is a soft brand preference rather than a discrete fact are unstudied, and ClashEval-style graded perturbation has no analog for such claims. (6) Inter-context conflict between multiple controlled search results (2+ disagreeing documents at different ranks, recency stamps, and popularity levels) is far less studied than single-document context-memory conflict; Xie et al.'s ratio/order findings are the only quantitative anchor and they used prompt-concatenated passages, not search results. (7) Recency/timestamp signals as conflict arbiters (does a 2026-dated page beat a memorized 2023 fact?) lack systematic treatment. (8) The Claude family is under-characterized across this entire literature (benchmarks center on GPT-4/GPT-4o, Llama, Mistral), so even direct replications of ClashEval/Xie-style designs on Claude via Bedrock, with token-logprob confidence measures, would be a publishable contribution.",
+    "papers": [
+      {
+        "title": "Knowledge Conflicts for LLMs: A Survey",
+        "authors": "Rongwu Xu, Zehan Qi, Zhijiang Guo, Cunxiang Wang, Hongru Wang, Yue Zhang, Wei Xu",
+        "year": 2024,
+        "venue": "EMNLP 2024 (arXiv:2403.08319)",
+        "url": "https://arxiv.org/abs/2403.08319",
+        "key_findings": "Canonical taxonomy of three conflict types: context-memory, inter-context, and intra-memory. Systematizes causes (temporal misalignment, misinformation pollution), observed behaviors (context-faithful vs memory-faithful vs disentangled responses), and mitigation families (faithful-to-context prompting, confidence calibration, conflict detection, decoding-time interventions). As a survey it carries few original numbers, but it explicitly flags that most prior work uses artificial counterfactual conflicts and calls for realistic, deployment-like setups. Companion repo: github.com/pillowsofwind/Knowledge-Conflicts-Survey.",
+        "method_to_adapt": "Use its three-way conflict taxonomy as the factor structure for our experiment grid (context-memory conflict = our fake-search-tool vs prior; inter-context conflict = two controlled search results disagreeing with each other), and its catalog of counter-memory construction methods (entity substitution vs LLM-generated coherent evidence) as the treatment-generation menu.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://aclanthology.org/2024.emnlp-main.486/",
+          "notes": "Verified: title, authors (Rongwu Xu, Zehan Qi, Zhijiang Guo, Cunxiang Wang, Hongru Wang, Yue Zhang, Wei Xu), year 2024, and venue EMNLP 2024 main conference (pp. 8541-8565) all match. arXiv:2403.08319 confirmed at https://arxiv.org/abs/2403.08319."
+        }
+      },
+      {
+        "title": "Adaptive Chameleon or Stubborn Sloth: Revealing the Behavior of Large Language Models in Knowledge Conflicts",
+        "authors": "Jian Xie, Kai Zhang, Jiangjie Chen, Renze Lou, Yu Su",
+        "year": 2024,
+        "venue": "ICLR 2024 Spotlight (arXiv:2305.13300)",
+        "url": "https://arxiv.org/abs/2305.13300",
+        "key_findings": "Across 8 LLMs (ChatGPT, GPT-4, PaLM2, Qwen-7B, Llama2-7B/70B, Vicuna-7B/33B): (1) when a coherent, LLM-generated counter-memory passage is the SOLE evidence, models are highly receptive and adopt it, overturning earlier entity-substitution-based conclusions that models are stubborn; (2) with mixed evidence, strong confirmation bias: GPT-4 shows ~80% memorization ratio on the most popular questions; ChatGPT's memorization ratio jumps from 30.0% to 86.2% as the share of evidence supporting parametric memory rises from 33% to 67%; (3) evidence-order effects exceed 5% for most models and 30% for PaLM2 and Llama2-7B; (4) receptiveness drops for popular entities.",
+        "method_to_adapt": "Their two-step framework: elicit the model's parametric answer closed-book, then have an LLM generate a coherent counter-memory passage embedding the conflicting answer. This is exactly how we should author the controlled documents our artificial Bedrock search tool returns. Also reuse the memorization-ratio metric and their evidence-mixture manipulations (ratio, order, quantity of supporting vs conflicting results).",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2305.13300",
+          "notes": "Verified via arXiv abs page: title, authors (Jian Xie, Kai Zhang, Jiangjie Chen, Renze Lou, Yu Su), venue ICLR 2024 Spotlight, and year 2024 all match the citation."
+        }
+      },
+      {
+        "title": "Entity-Based Knowledge Conflicts in Question Answering",
+        "authors": "Shayne Longpre, Kartik Perisetla, Anthony Chen, Nikhil Ramesh, Chris DuBois, Sameer Singh",
+        "year": 2021,
+        "venue": "EMNLP 2021 (arXiv:2109.05052)",
+        "url": "https://aclanthology.org/2021.emnlp-main.565/",
+        "key_findings": "Introduced the entity-substitution framework (corpus, type-swap, popularity, and alias substitutions) that swaps the answer entity in a gold context to create context-memory conflict. Memorization ratio (predicting the memorized answer instead of the in-context one) rises from <15% to >=50% as model size grows from 60M to 11B parameters (T5 family); memorization is worse in-domain than out-of-domain, worse with lower-quality training retrieval, worse for popular entities, and highest for numeric answer types (dates/numbers). Training augmentation with substituted instances improves OOD F1 by 4-7%. Code: github.com/apple/ml-knowledge-conflicts.",
+        "method_to_adapt": "The substitution framework itself (especially popularity substitution, which swaps in entities from specified Wikidata popularity bands) and the memorization-ratio metric. Their finding that scale increases memorization is a direct hypothesis to re-test across Claude Haiku/Sonnet/Opus tiers on Bedrock.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://aclanthology.org/2021.emnlp-main.565/",
+          "notes": "Verified against ACL Anthology: title, authors (Longpre, Perisetla, Chen, Ramesh, DuBois, Singh), venue EMNLP 2021, and year all match. arXiv:2109.05052 corresponds to this paper."
+        }
+      },
+      {
+        "title": "ClashEval: Quantifying the tug-of-war between an LLM's internal prior and external evidence",
+        "authors": "Kevin Wu, Eric Wu, James Zou",
+        "year": 2024,
+        "venue": "NeurIPS 2024 Datasets and Benchmarks Track (arXiv:2404.10198)",
+        "url": "https://arxiv.org/abs/2404.10198",
+        "key_findings": "Dataset of 1,200+ questions across six domains (drug dosages, Olympic records, locations, dates, names, news) with graded perturbations of the answer inside otherwise-genuine retrieved content, ranging from subtle to blatant. Benchmarking six top LLMs including GPT-4o: models abandon their own CORRECT prior and adopt incorrect retrieved content over 60% of the time; adoption probability falls monotonically as the perturbation becomes more implausible (more deviated from truth); lower token-probability confidence in the initial closed-book answer predicts higher adoption of retrieved content, and a simple probability-based arbitration rule improves accuracy.",
+        "method_to_adapt": "The graded-perturbation design (e.g., multiply a dosage by 0.1x to 10x, shift dates by increasing amounts) gives us a plausibility dial for the documents our fake search tool serves, and their two metrics \u2014 prior-override rate and context-adoption rate as a function of perturbation magnitude and prior token-probability \u2014 are directly reusable dependent variables.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2404.10198",
+          "notes": "Verified. Title, authors (Kevin Wu, Eric Wu, James Zou), year 2024, and venue (NeurIPS 2024 Datasets and Benchmarks Track) all match. Confirmed via arXiv abs page and NeurIPS proceedings: https://proceedings.neurips.cc/paper_files/paper/2024/hash/3aa291abc426d7a29fb08418c1244177-Abstract-Datasets_and_Benchmarks_Track.html"
+        }
+      },
+      {
+        "title": "When Not to Trust Language Models: Investigating Effectiveness of Parametric and Non-Parametric Memories",
+        "authors": "Alex Mallen, Akari Asai, Victor Zhong, Rajarshi Das, Daniel Khashabi, Hannaneh Hajishirzi",
+        "year": 2023,
+        "venue": "ACL 2023 (arXiv:2212.10511)",
+        "url": "https://aclanthology.org/2023.acl-long.546/",
+        "key_findings": "PopQA: 14k questions over 16 Wikidata relations, with entity popularity operationalized as Wikipedia pageviews. Ten models (OPT 1.3-13B, GPT-Neo 1.3-20B, GPT-3 davinci-002/003): GPT-3 davinci-003 gets 35% overall but only 19% on the 4,000 least-popular questions (GPT-J 6B: 16%); scaling mainly improves memorization of POPULAR knowledge and barely helps the long tail. Adaptive retrieval (retrieve only when subject-entity popularity is below a threshold) lifts davinci-003 to 46.5% (+5.3% over always-retrieving) while cutting GPT-3 API cost roughly in half.",
+        "method_to_adapt": "Wikipedia pageviews as the entity-popularity covariate, and PopQA itself as a stratified sampling frame for selecting entities the model does vs does not know \u2014 the backbone for our known-vs-unknown-entity manipulation. The popularity threshold at which retrieval starts beating parametric memory is a number we can re-estimate for Claude.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://aclanthology.org/2023.acl-long.546/",
+          "notes": "Verified against ACL Anthology: title, authors, venue (ACL 2023 Long Papers), and year all match. Also available as arXiv:2212.10511."
+        }
+      },
+      {
+        "title": "What Evidence Do Language Models Find Convincing?",
+        "authors": "Alexander Wan, Eric Wallace, Dan Klein",
+        "year": 2024,
+        "venue": "ACL 2024 (arXiv:2402.11782)",
+        "url": "https://aclanthology.org/2024.acl-long.403/",
+        "key_findings": "ConflictingQA: 238 controversial yes/no queries with 2,208 real scraped web paragraphs (avg 365 words) on opposing sides; convincingness measured as win-rate when paired against >=5 opposing-stance documents. Query-paragraph embedding similarity (relevance) correlates strongly with win-rate for all models except GPT-4; stylistic credibility markers humans value \u2014 adding scientific references, neutral/objective tone, readability \u2014 have neutral-to-NEGATIVE effects on win-rate. Interventions: merely prepending 'The following text is about the question: [question]' markedly raises a document's win-rate despite adding no substance.",
+        "method_to_adapt": "The paired-document win-rate metric and the counterfactual text-perturbation interventions constitute a ready-made AEO content-optimization experiment: take a page, apply one perturbation (keyword/relevance injection, added citations, tone change), and measure the change in probability the answer engine sides with it. ConflictingQA is reusable as-is.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://aclanthology.org/2024.acl-long.403/",
+          "notes": "Verified: Wan, Wallace, Klein, ACL 2024 Long Papers (paper 403), arXiv:2402.11782. All metadata in the citation is correct."
+        }
+      },
+      {
+        "title": "Studying Large Language Model Behaviors Under Context-Memory Conflicts With Real Documents",
+        "authors": "Evgenii Kortukov, Alexander Rubinstein, Elisa Nguyen, Seong Joon Oh",
+        "year": 2024,
+        "venue": "COLM 2024 (arXiv:2404.16032)",
+        "url": "https://arxiv.org/abs/2404.16032",
+        "key_findings": "Flips the standard setup: updates INCORRECT parametric answers with REAL factual documents (6 MrQA datasets: NQ, SQuAD, NewsQA, TriviaQA, SearchQA, HotpotQA; Llama2-7B/70B, Mistral-7B, Mixtral-8x7B, GPT-3.5-Turbo). In this realistic regime models retain their parametric answer only 0.4-3.4% (Llama2-7B), 0.1-3.3% (Mistral-7B), 0.1-6.2% (Mixtral-8x7B) of the time \u2014 versus up to 20% (NQ) and 75% (NewsQA) reported with synthetic conflicts. Discovers 'parametric bias': if the wrong parametric answer string also appears in the context, update failure likelihood rises by +4 to +11 pts (Llama2-7B; +1-10 Mistral, +2-10 Mixtral), significant at p<0.05 in all 18 model-dataset settings; in failure cases the parametric answer appears in context 32-88% of the time vs 5-28% baseline. Masking it cuts retention by up to 1.8 pts; appending it after 'Unrelated text:' raises retention (e.g., +11.1 pts on NQ).",
+        "method_to_adapt": "Their three-stage pipeline (closed-book probe -> BEM-based conflict filtering with NLI entailment check -> open-book categorization into correct-update / retain-parametric / incorrect-update) is a clean, reusable protocol for Bedrock experiments, and the masking / 'Unrelated text' injection interventions are cheap causal probes we can replicate. Key caution for us: synthetic-conflict effect sizes overstate real-world stubbornness.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2404.16032",
+          "notes": "All metadata matches: title, authors (Evgenii Kortukov, Alexander Rubinstein, Elisa Nguyen, Seong Joon Oh), year 2024, and COLM 2024 venue confirmed via web search (author's site and COLM accepted papers list). arXiv page itself doesn't list the venue but ID 2404.16032 matches."
+        }
+      },
+      {
+        "title": "Context versus Prior Knowledge in Language Models",
+        "authors": "Kevin Du, V\u00e9steinn Sn\u00e6bjarnarson, Niklas Stoehr, Jennifer C. White, Aaron Schein, Ryan Cotterell",
+        "year": 2024,
+        "venue": "ACL 2024 (arXiv:2404.04633)",
+        "url": "https://aclanthology.org/2024.acl-long.714/",
+        "key_findings": "Defines two information-theoretic metrics: persuasion score of a context (KL divergence between answer distributions with vs without the context) and susceptibility score of an entity (mutual information between context and answer given the query). On Pythia 70M-12B with a YAGO-derived dataset (122 relations x 100 real entities + 50 GPT-4-generated fake entities): susceptibility correlates negatively with entity co-occurrence frequency in the Pile training data (Spearman rho = -0.23 for Pythia-6.9B); real (familiar) entities are significantly less susceptible than fake ones in 73/122 open and 61/122 closed queries; relevant contexts are significantly more persuasive than irrelevant ones in 95-100% of open queries; assertive phrasing raises persuasion mainly for closed questions.",
+        "method_to_adapt": "The fake-vs-real entity design (GPT-generated entities guaranteed absent from training data) is precisely our planned known-vs-unknown-entity manipulation, with susceptibility as the outcome metric; the training-frequency correlation gives us the quantitative form of the popularity moderator. Persuasion/susceptibility can be computed from Bedrock token logprobs.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://aclanthology.org/2024.acl-long.714/",
+          "notes": "All metadata verified: title, authors, ACL 2024 (long paper), arXiv:2404.04633, and ACL Anthology URL all correct. Sources: https://aclanthology.org/2024.acl-long.714/ and https://arxiv.org/abs/2404.04633"
+        }
+      },
+      {
+        "title": "To Trust or Not to Trust? Enhancing Large Language Models' Situated Faithfulness to External Contexts",
+        "authors": "Yukun Huang, Sanxing Chen, Hongyi Cai, Bhuwan Dhingra",
+        "year": 2024,
+        "venue": "arXiv:2410.14675 (2024; later ICLR-track publication not independently verified)",
+        "url": "https://arxiv.org/abs/2410.14675",
+        "key_findings": "Introduces 'situated faithfulness': calibrating trust in external context against confidence in internal knowledge. Finds both open-source and proprietary models over-rely on external information regardless of its accuracy. Builds a new QA dataset with naturally incorrect contexts sourced from Reddit posts (plus standard QA sets). Self-Guided Confidence Reasoning (SCR \u2014 model self-assesses reliability of context vs internal knowledge) improves accuracy by up to 24.2% over baseline for GPT-4o; Confidence-Reasoning DPO fine-tuning yields +8.9% average on Llama-3-8B; rule-based confidence arbitration (RCR) works better for weaker models.",
+        "method_to_adapt": "Their Reddit-sourced organically-wrong-context dataset is a realistic complement to our synthetic perturbations, and the SCR prompting protocol doubles as a measurement instrument: comparing Claude's behavior with vs without explicit confidence-reasoning instructions tells us how much conflict arbitration is steerable by system prompt alone \u2014 relevant because answer engines differ in exactly such scaffolding.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2410.14675",
+          "corrected_venue": "ICLR 2025 (also arXiv:2410.14675, posted 2024)",
+          "notes": "Verified on arXiv: title, authors (Yukun Huang, Sanxing Chen, Hongyi Cai, Bhuwan Dhingra), and 2024 arXiv posting all match. The \"later ICLR-track publication\" is confirmed: accepted at ICLR 2025 (OpenReview: https://openreview.net/forum?id=K2jOacHUlO; ICLR poster page iclr.cc/virtual/2025/poster/30079). Year 2024 is correct for the arXiv preprint; use 2025 if citing the ICLR version."
+        }
+      }
+    ]
+  },
+  {
+    "area": "geo-aeo",
+    "synthesis": "The GEO/AEO research area was formalized by Aggarwal et al. (KDD 2024), who built GEO-bench (10K queries, 25 domains) and a simulated generative engine (top-5 retrieved sources fed to an LLM) to test nine content rewrites of a single source. Their headline results \u2014 Quotation Addition +41%, Statistics Addition +34%, Cite Sources +30% on position-adjusted share-of-answer, keyword stuffing useless, and lower-ranked sites gaining most (+115% at rank 5 while rank-1 sites lose 30%) \u2014 created both the field's standard metrics (Position-Adjusted Word Count, Subjective Impression) and its standard experimental template. The most important follow-up is adversarial to it: C-SEO Bench (NeurIPS D&B 2025) re-tested GEO-style methods across QA and product-recommendation tasks with a multi-actor protocol and found most methods ineffective or actively harmful (~0 ranking boost), with gains collapsing toward zero-sum as adoption spreads, while traditional SEO (getting retrieved and ranked higher in context) remains the dominant lever. This unresolved GEO-vs-C-SEO-Bench contradiction \u2014 likely driven by differences in metrics (share-of-answer vs rank), tasks, and single- vs multi-actor settings \u2014 is the central open replication question in the field. Complementary mechanism work includes Pfrommer et al. (EMNLP 2024), who used a fully controlled context (the design closest to our planned artificial search tool) and showed LLM source-ranking is driven by an entangled mix of brand-name parametric priors, document content, and context position, and is trivially manipulable by prompt injection that transfers to live Perplexity.\n\nA second stream comprises measurement studies of live engines. Chen et al. (arXiv:2509.08919) ran 1,000 controlled prompts across ChatGPT/Perplexity/Gemini/Claude in 6 languages and found AI engines cite 74-92% earned media (vs Google's ~32-52%), essentially zero social content, only 15-33% top-5 domain overlap with Google, and strong provider idiosyncrasy (Claude uniquely stable across languages). Yang (arXiv:2507.05301) mined the public AI Search Arena dataset (24K conversations, 366K citations) and found heavy citation concentration in a few outlets with provider-specific preferences. Zhang et al. (arXiv:2604.25707) advanced measurement by splitting citation selection from citation absorption across 602 prompts/21K citations/72 content features, showing ChatGPT cites few sources deeply while Perplexity/Google cite broadly and shallowly, and that absorbed content is long, well-structured, semantically aligned, and rich in extractable definitions, numbers, comparisons, and procedures \u2014 convergent with the original GEO feature findings. Methodologically, Schulte et al. (arXiv:2604.07585) showed visibility is highly non-deterministic across runs/prompts/time and must be measured as a distribution, and Liu et al. (EMNLP 2023) established the citation precision/recall protocol, finding only 51.5% of generated sentences are citation-supported. On the economic side, Pew's 900-person browsing panel showed AI Overviews halve organic CTR (8% vs 15%) with only 1% CTR on cited sources, quantifying why brands care about in-answer presence rather than clicks.",
+    "gaps": "(1) No study isolates parametric familiarity: every GEO experiment manipulates document content, but Pfrommer et al. showed brand-name priors independently drive ranking \u2014 nobody has factorially crossed entity-known-to-training-corpus vs entity-unknown with content features under a fully controlled retriever. Our known-vs-unknown-entity design on Bedrock directly fills this. (2) Causal identification is weak in live-engine studies: retrieval and generation are confounded (a page may be cited because the search layer surfaced it, not because the LLM preferred it); only Pfrommer et al. and the original GEO simulation control the context, and neither runs factorial manipulations of benign content features (statistics x quotes x structure x freshness x position) with variance-aware repeated sampling. (3) Schema.org/FAQ/JSON-LD markup \u2014 the most heavily sold industry AEO tactic \u2014 has essentially no controlled evidence anywhere in the academic literature; GEO tested only prose-level rewrites, so a rigorous structured-data experiment would be novel. (4) The GEO vs C-SEO Bench contradiction (40% boosts vs ~0/negative effects) is unreplicated and unexplained; a study that reconciles it by varying metric (share-of-answer vs rank vs recommendation), number of competing optimized documents, and model family would be a genuine contribution. (5) Claude specifically is understudied \u2014 most work targets GPT/Perplexity/Gemini; Chen et al. note Claude behaves differently (cross-language stability) but no GEO-method efficacy numbers exist for Claude. (6) Nobody decomposes visibility variance into sampling temperature vs retrieval churn vs model version, and nothing is longitudinal (do optimizations survive model updates?). (7) Answer-level outcomes beyond inclusion \u2014 sentiment/framing of the brand mention, hallucinated attributes of unknown entities, and miscitation rates for controlled sources \u2014 are unmeasured in the AEO context despite the citation precision/recall tooling existing since 2023.",
+    "papers": [
+      {
+        "title": "GEO: Generative Engine Optimization",
+        "authors": "Pranjal Aggarwal, Vishvak Murahari, Tanmay Rajpurohit, Ashwin Kalyan, Karthik Narasimhan, Ameet Deshpande",
+        "year": 2024,
+        "venue": "KDD 2024 (arXiv:2311.09735)",
+        "url": "https://arxiv.org/abs/2311.09735",
+        "key_findings": "Introduces GEO-bench: 10,000 queries (8K train/1K val/1K test) drawn from 9 sources (MS Marco, ORCAS-I, Natural Questions, ELI5, Perplexity Discover, etc.) across 25 domains (~80% informational). Tests 9 content rewrites of one of the top-5 retrieved sources. Best: Quotation Addition +41% Position-Adjusted Word Count / +28% Subjective Impression; Statistics Addition +34%/+24%; Cite Sources +30%/+15%. Keyword Stuffing (classic SEO) gives little-to-no improvement. Effects are rank-dependent: rank-5 sites gained +115.1% visibility via Cite Sources while rank-1 sites lost 30.3%. Effects are domain-specific (Authoritative tone wins for debate/history; Statistics for Law & Government). Validated on live Perplexity.ai: Quotation Addition +22%.",
+        "method_to_adapt": "GEO-bench dataset (public) plus the two visibility metrics (Position-Adjusted Word Count; GPT-judged Subjective Impression) and the 9-method rewrite taxonomy. Their design \u2014 fixed set of 5 retrieved sources, rewrite exactly one, measure share-of-answer \u2014 is directly reusable inside our controlled artificial search tool on Bedrock.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2311.09735",
+          "notes": "Verified via arXiv abstract page. Title, author list, and venue (KDD 2024) all match. arXiv v1 was Nov 2023, but the KDD publication year 2024 is correct as cited."
+        }
+      },
+      {
+        "title": "C-SEO Bench: Does Conversational SEO Work?",
+        "authors": "Haritz Puerto, Martin Gubri, Tommaso Green, Seong Joon Oh, Sangdoo Yun",
+        "year": 2025,
+        "venue": "NeurIPS 2025 Datasets & Benchmarks (arXiv:2506.11097)",
+        "url": "https://arxiv.org/abs/2506.11097",
+        "key_findings": "Direct critique/replication of GEO-style methods. Benchmark spans 2 tasks (QA, product recommendation) x 3 domains each, with a novel multi-actor protocol varying the adoption rate among retrieved documents. Finds most C-SEO methods are largely ineffective and frequently NEGATIVE for document ranking (close to 0 boost), while traditional SEO (being ranked higher in the retrieved context) is significantly more effective. As more actors adopt C-SEO, aggregate gains shrink \u2014 the game is congested and zero-sum. Code public at github.com/parameterlab/c-seo-bench.",
+        "method_to_adapt": "The multi-actor adoption-rate protocol: vary what fraction of the k documents returned by our controlled search tool are 'optimized' (0%, 20%, ..., 100%) to test whether GEO effects survive competition. Also reuse their finding as the key adversarial baseline our experiments must confirm or refute.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2506.11097",
+          "notes": "Verified on arXiv: title, authors (Haritz Puerto, Martin Gubri, Tommaso Green, Seong Joon Oh, Sangdoo Yun), year 2025, and venue (accepted at NeurIPS 2025 Datasets & Benchmarks) all match the citation exactly."
+        }
+      },
+      {
+        "title": "Generative Engine Optimization: How to Dominate AI Search",
+        "authors": "Mahe Chen, Xiaoxuan Wang, Kaiwen Chen, Nick Koudas",
+        "year": 2025,
+        "venue": "arXiv (arXiv:2509.08919), Univ. of Toronto",
+        "url": "https://arxiv.org/abs/2509.08919",
+        "key_findings": "Large-scale controlled comparison of ChatGPT (GPT-4o), Perplexity, Gemini, Claude vs Google: 1,000 consumer ranking prompts across 10 product categories, US+Canada, 6 languages, 7 paraphrase styles per query. AI engines show overwhelming bias to earned media: e.g., US automotive GPT citations are 81.9% earned / 0% social vs Google's 45.1% earned / 15.4% social; US consumer electronics GPT 92.1% earned. Top-5 domain overlap between Google and GPT is only 15-33%; local-service overlap as low as 2.5% (auto repair). GPT shows near-zero cross-language domain overlap while Claude is much more stable across languages; paraphrase-induced domain instability is 0.3-0.7 for AI engines.",
+        "method_to_adapt": "The earned/brand-owned/social source taxonomy, the 7-style paraphrase battery for robustness testing, and Google-vs-AI domain-overlap metrics. The paraphrase battery is directly reusable to test whether our Claude/Bedrock citation effects are query-phrasing-robust.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2509.08919",
+          "notes": "Verified on arXiv: title, authors (Mahe Chen, Xiaoxuan Wang, Kaiwen Chen, Nick Koudas), year 2025, arXiv:2509.08919 all match. Nick Koudas is a University of Toronto professor, consistent with the claimed affiliation, though the arXiv abstract page does not list affiliations explicitly."
+        }
+      },
+      {
+        "title": "Ranking Manipulation for Conversational Search Engines",
+        "authors": "Samuel Pfrommer, Yatong Bai, Tanmay Gautam, Somayeh Sojoudi",
+        "year": 2024,
+        "venue": "EMNLP 2024 Main (arXiv:2406.03589)",
+        "url": "https://arxiv.org/abs/2406.03589",
+        "key_findings": "Closest existing analogue to a fully controlled search tool: they load a fixed set of real consumer-product websites (new RAGDOLL dataset) into LLM context and study which source gets recommended/cited. In the benign (no-attack) setting, LLMs vary significantly in how much they weight product name (parametric brand knowledge), document content, and context position \u2014 i.e., strong position and brand-prior effects on ranking. Their tree-of-attacks prompt-injection reliably promotes low-ranked products and transfers to production Perplexity.ai.",
+        "method_to_adapt": "Their controlled RAG sandbox with position randomization and name/content/position attribution analysis is almost exactly our planned design; reuse the RAGDOLL product-website dataset (github.com/spfrommer/cse-ranking-manipulation) and their decomposition of ranking variance into brand-name prior vs document content vs context position.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2406.03589",
+          "notes": "Verified via arXiv abs page and ACL Anthology (2024.emnlp-main.534). Title, authors (Samuel Pfrommer, Yatong Bai, Tanmay Gautam, Somayeh Sojoudi), year 2024, and venue EMNLP 2024 Main all match. No corrections needed."
+        }
+      },
+      {
+        "title": "Evaluating Verifiability in Generative Search Engines",
+        "authors": "Nelson F. Liu, Tianyi Zhang, Percy Liang",
+        "year": 2023,
+        "venue": "Findings of EMNLP 2023 (arXiv:2304.09848)",
+        "url": "https://arxiv.org/abs/2304.09848",
+        "key_findings": "Foundational human audit of 4 generative search engines (Bing Chat, NeevaAI, Perplexity.ai, YouChat) on diverse queries: on average only 51.5% of generated sentences are fully supported by their citations (citation recall) and only 74.5% of citations support their associated sentence (citation precision). Also observed an inverse correlation between fluency/perceived utility and citation support \u2014 engines that sound better cite worse. Annotations and code public.",
+        "method_to_adapt": "The citation precision / citation recall annotation protocol \u2014 the standard way to measure whether a citation in an AI answer actually supports the claim. Needed in our experiments to distinguish 'being cited' from 'actually influencing answer content', and to detect miscitation of controlled sources.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://aclanthology.org/2023.findings-emnlp.467/",
+          "notes": "Verified. All metadata correct: Nelson F. Liu, Tianyi Zhang, Percy Liang; Findings of EMNLP 2023; arXiv:2304.09848 (https://arxiv.org/abs/2304.09848)."
+        }
+      },
+      {
+        "title": "News Source Citing Patterns in AI Search Systems",
+        "authors": "Kai-Cheng Yang",
+        "year": 2025,
+        "venue": "arXiv (arXiv:2507.05301)",
+        "url": "https://arxiv.org/abs/2507.05301",
+        "key_findings": "Large-scale observational study of the public AI Search Arena dataset: 24,000+ conversations, 65,000+ responses from OpenAI, Perplexity, and Google models, containing 366,000+ embedded citations. Only ~9% of citations reference news sources; citations concentrate heavily on a small number of outlets, and providers differ systematically in preferred outlets (e.g., Perplexity heavily favors BBC; OpenAI concentrates on wire services), showing provider-level citation idiosyncrasy rather than a shared web-authority signal.",
+        "method_to_adapt": "The AI Search Arena dataset itself (public, github.com/yang3kc/ai_search_arena) as an observational complement to our controlled experiments, plus his citation-concentration analysis for quantifying domain-level winner-take-all effects per provider.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2507.05301",
+          "notes": "All metadata matches: title, author Kai-Cheng Yang, arXiv 2507.05301, submitted July 7, 2025."
+        }
+      },
+      {
+        "title": "From Citation Selection to Citation Absorption: A Measurement Framework for Generative Engine Optimization Across AI Search Platforms",
+        "authors": "Zhang Kai, He Xinyue, Yao Jingang",
+        "year": 2026,
+        "venue": "arXiv (arXiv:2604.25707)",
+        "url": "https://arxiv.org/abs/2604.25707",
+        "key_findings": "Splits GEO measurement into two stages: citation selection (which sources get cited) vs citation absorption (how much of the cited page's language/evidence/structure actually enters the answer). Dataset: 602 controlled prompts across ChatGPT, Google AI Overview/Gemini, Perplexity; 21,143 search-layer citations, 18,151 retrieved pages, 23,745 citation-level records, 72 extracted content features. Finds inverse breadth/depth pattern: Perplexity and Google cite more sources; ChatGPT cites fewer but each cited page has substantially higher influence on answer text. High-absorption pages are longer, better structured, semantically aligned with the query, and contain extractable elements: definitions, numerical data, comparisons, procedural steps.",
+        "method_to_adapt": "The selection-vs-absorption two-stage metric (measure token/claim overlap between each controlled source and the generated answer, not just citation counts) and their 72-feature content codebook as the feature space for our factorial content manipulations.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2604.25707",
+          "notes": "Confirmed on arXiv: title, authors (Zhang Kai, He Xinyue, Yao Jingang), venue (arXiv:2604.25707), and year 2026 (submitted April 28, 2026) all match the citation. No corrections needed."
+        }
+      },
+      {
+        "title": "Don't Measure Once: Measuring Visibility in AI Search (GEO)",
+        "authors": "Julius Schulte, Malte Bleeker, Philipp Kaufmann",
+        "year": 2026,
+        "venue": "arXiv (arXiv:2604.07585)",
+        "url": "https://arxiv.org/abs/2604.07585",
+        "key_findings": "Methodological study showing AI-search visibility is a random variable: answers (and which brands/pages appear) vary substantially across runs, prompt paraphrases, and time, making one-off visibility observations unreliable. Argues visibility must be characterized as a distribution over repeated samples rather than a point estimate; 19 pages, 7 figures, 17 tables of variance characterization across platforms.",
+        "method_to_adapt": "The repeated-sampling protocol: fix per-condition sample sizes from their run-to-run variance estimates for statistical power. Directly applicable to our Bedrock experiments \u2014 every condition needs N repeated generations, and visibility should be reported as a distribution with CIs.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2604.07585",
+          "notes": "Verified on arXiv: title, authors (Julius Schulte, Malte Bleeker, Philipp Kaufmann), year 2026, and ID 2604.07585 all match the citation. Submitted April 10, 2026."
+        }
+      },
+      {
+        "title": "Google users are less likely to click on links when an AI summary appears in the results",
+        "authors": "Pew Research Center",
+        "year": 2025,
+        "venue": "Pew Research Center short read (nonprofit measurement study; peer-reviewed work on referral traffic is thin)",
+        "url": "https://www.pewresearch.org/short-reads/2025/07/22/google-users-are-less-likely-to-click-on-links-when-an-ai-summary-appears-in-the-results/",
+        "key_findings": "Passive metered browsing data from 900 U.S. adults during March 2025: 58% encountered at least one Google SERP with an AI Overview. Users clicked a traditional result on only 8% of SERPs with an AI summary vs 15% without (roughly halved CTR). Only 1% of visits to pages with AI summaries produced a click on a source cited inside the AI Overview. Users ended their browsing session entirely on 26% of AI-summary pages vs 16% of traditional SERPs.",
+        "method_to_adapt": "The metered real-user browsing panel methodology, and the concrete baseline numbers (8% vs 15% CTR; 1% citation CTR) for quantifying the business value of being cited vs being clicked \u2014 the core economic premise of AEO.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://www.pewresearch.org/short-reads/2025/07/22/google-users-are-less-likely-to-click-on-links-when-an-ai-summary-appears-in-the-results/",
+          "corrected_authors": "Athena Chapekis and Anna Lieb (Pew Research Center)",
+          "notes": "Publication confirmed at the claimed URL with matching title, venue (Pew Research Center short read), and date (July 22, 2025). Individual authors are Athena Chapekis and Anna Lieb rather than the institutional attribution. Not an arXiv/ACL paper; the Pew URL is canonical. Key finding: users clicked links on 8% of visits with AI summaries vs 15% without."
+        }
+      }
+    ]
+  },
+  {
+    "area": "adversarial-manipulation",
+    "synthesis": "The adversarial-manipulation literature for LLM-mediated search and recommendation coalesced rapidly in 2024 and splits into three tightly related threads. (1) Content-injection ranking attacks: an attacker who controls only their own product page or document inserts an adversarial 'strategic text sequence' (STS) that forces the LLM to rank/recommend that item first. Kumar & Lakkaraju (2404.07981) established this with GCG-optimized STS on a Llama-2 recommender over a fictitious catalog, showing target products jump from unranked to top with ~40% success under randomized orderings; Pfrommer et al. (EMNLP 2024) scaled it to a 1,147-page real-product dataset and a tree-of-attacks method, reporting mean rank-score gains of 54-96% of the maximum possible gap across GPT-3.5/4, Llama-3-70B, Mixtral, and Perplexity's Sonar, with successful transfer to live perplexity.ai. StealthRank (2504.05804) and RAF/two-stage token optimization (2510.06732, ACL 2026) then made these injections fluent and detection-evading via energy-based/Langevin and readability-aware optimization. (2) Preference/plugin manipulation on production systems: Nestaas, Debenedetti & Tram\u00e8r (2406.18382) showed black-box 'Preference Manipulation Attacks' lift Bing Copilot recommendation rates from 34.0% to 59.4% (~2.5x), push GPT-4/Claude-3 plugin selection up to 7.2x (0%\u2192>90% in some cases), let unknown products match reputable brands, and create a multi-attacker prisoner's dilemma; Claude 3 Opus occasionally refused entirely. (3) RAG knowledge corruption: PoisonedRAG (USENIX Security 2025) formalizes injection as a retrieval condition plus a generation condition and hits 90% attack success by injecting just 5 texts into a million-document corpus, with standard defenses failing.\n\nMethodologically, the field converges on a small set of reusable ingredients: controlled product/document catalogs (fictitious in Kumar & Lakkaraju, real-brand in Pfrommer); optimization objectives ranging from white-box GCG/energy-based token search to fully black-box LLM-rewriting (TAP); and an emerging shared metric vocabulary. GEO-Bench (2605.29107, 2026) unifies these under one protocol across 5 datasets with a fixed Llama-3.1-8B ranker, scoring effectiveness via normalized rank gain, Success@alpha, and Promote@alpha, and stealth via keyword-violation-rate and perplexity-ratio \u2014 and finds black-box rewriting can match gradient attacks while evading both keyword and perplexity detectors. Yin et al. (2602.16752, 2026) add the sharpest architectural findings: prompt-injection ASR is 87.82-100% for pairwise and 73-99.82% for setwise ranking but only 8-55% for listwise; ranking quality collapses (nDCG@10 0.658\u21920.295, a 55.2% drop); encoder-decoder rankers (Flan-T5) are 10-15x more robust than scale-matched decoders; and document position matters strongly (back-placement injections do more damage than front).\n\nThe quantitative picture is consistent: modern decoder-only LLMs used as selectors/rankers are highly manipulable by content they retrieve, injected text can be made fluent enough to defeat perplexity- and keyword-based filters, attacks transfer from open models to commercial answer engines, and the effect is large enough to let unknown entities leapfrog reputable ones. The white-hat counterpart \u2014 Aggarwal et al.'s GEO (KDD 2024) \u2014 shows even legitimate edits (citations, quotations, statistics, authoritative language) raise visibility up to 40%, blurring the line between 'optimization' and 'attack.' Most rigorous, numeric evidence comes from open/older models (Llama-2, Llama-3.1-8B, GPT-4-era Bing/Perplexity); current-generation answer engines are studied mostly via proof-of-concept.",
+    "gaps": "Several high-value questions remain open that a startup with controlled Bedrock access could answer rigorously. (1) Current-generation, controlled-tool studies: nearly all numeric results use open/small models (Llama-2, Llama-3.1-8B) or 2024-era commercial systems (Bing Copilot, GPT-4, Perplexity Sonar). No study runs a clean factorial experiment on a current Claude via Bedrock with a fully experimenter-controlled search tool, which removes the confound of the retrieval condition (PoisonedRAG's first hurdle) and isolates the pure persuasion/selection behavior. (2) Training-corpus familiarity as a first-class variable: Nestaas et al. only anecdotally show unknown products matching Nikon/Fujifilm; no one has systematically crossed KNOWN-vs-UNKNOWN entities against manipulation strength to measure whether prior brand knowledge is a protective prior or an exploitable anchor. (3) Robustness specifically to unsupported superlatives and fake authority: existing attacks are either gradient-optimized gibberish (GCG/STS) or jailbreaks; the mundane, realistic AEO tactic \u2014 plausible but unverifiable claims like 'rated #1' or 'recommended by experts' \u2014 is under-quantified as its own manipulation class, with no dose-response curve on how much fabricated authority it takes to shift Claude's citation/recommendation. (4) Citation vs recommendation distinction: metrics conflate 'gets cited/quoted' with 'gets recommended as best'; separating source-visibility (GEO impression metrics) from purchase-intent recommendation is unexplored for a single model. (5) White-hat vs black-hat boundary and detectability: little work measures whether legitimate high-quality content (GEO-style) can achieve the same visibility gains as adversarial injection, and whether the model or a filter can distinguish them. (6) Multi-turn/conversational and position dynamics: Yin et al. show strong position sensitivity for rankers, but not for a conversational answer engine over multi-turn sessions with tool calls. (7) Defenses from the platform side and longitudinal real-web measurement of actual AEO service providers are almost entirely absent from peer-reviewed work.",
+    "papers": [
+      {
+        "title": "Manipulating Large Language Models to Increase Product Visibility",
+        "authors": "Aounon Kumar, Himabindu Lakkaraju",
+        "year": 2024,
+        "venue": "arXiv (cs.IR)",
+        "url": "https://arxiv.org/abs/2404.07981",
+        "key_findings": "Controlled catalog of 10 fictitious coffee machines fed to a Llama-2 recommender. An adversarial 'strategic text sequence' (STS) optimized with the GCG algorithm and inserted into a target product's page moved products from rarely/never recommended (or 2nd place) to the top recommendation. Reaching top rank took ~100 GCG iterations for one target and ~1000 for another. Across 200 independent evaluations with randomized product ordering, the STS improved ranking in roughly 40% of cases; adding random product-order permutations during optimization ('robust' STS) substantially increased the advantage while minimizing cases where it hurt. Transfer to black-box GPT-4 is claimed but not directly tested.",
+        "method_to_adapt": "Reuse the fictitious-product-catalog design (N items, 1-2 targets, injected STS in the product page) and, critically, the protocol of evaluating over many RANDOMIZED product orderings to disentangle position effects from content effects; adopt GCG with a 'recommend product X first' target loss and their robust-permutation training variant.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2404.07981",
+          "notes": "Verified via arXiv abstract page. Title, authors (Aounon Kumar, Himabindu Lakkaraju), year (2024), and venue (arXiv, primary category cs.IR) all match the citation exactly."
+        }
+      },
+      {
+        "title": "Ranking Manipulation for Conversational Search Engines",
+        "authors": "Samuel Pfrommer, Yatong Bai, Tanmay Gautam, Somayeh Sojoudi",
+        "year": 2024,
+        "venue": "EMNLP 2024 (Main)",
+        "url": "https://arxiv.org/abs/2406.03589",
+        "key_findings": "Built the RAGDOLL dataset of 1,147 real consumer-product webpages (8 brands x 50 product categories across 5 groups: personal care, electronics, appliances, home improvement, garden). A tree-of-attacks jailbreaking method injects adversarial content into a target site. Mean ranking-score gain: GPT-3.5 Turbo +3.38 (57.53% of max possible gap), GPT-4 Turbo +5.00 (82.94%), Llama-3-70B +6.02 (95.74%), Mixtral 8x22 +4.13 (76.23%), Perplexity Sonar Large Online +2.89 (54.23%). Attacks transferred end-to-end to live perplexity.ai, yielding ~3-position average rank improvement (>half the gap to top rank). Different LLMs weight product-name salience and document position very differently.",
+        "method_to_adapt": "Reuse the RAGDOLL dataset structure and the 'score gain / % of maximum gap' metric; adopt their explicit analysis of how document POSITION in the retrieved set shifts rankings, and their open-model-to-Perplexity transfer-attack protocol as a template for open-model-to-Claude transfer.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://aclanthology.org/2024.emnlp-main.534/",
+          "notes": "Verified: title, authors (Samuel Pfrommer, Yatong Bai, Tanmay Gautam, Somayeh Sojoudi), year 2024, venue EMNLP 2024 Main all correct. arXiv: https://arxiv.org/abs/2406.03589; ACL Anthology: 2024.emnlp-main.534."
+        }
+      },
+      {
+        "title": "Adversarial Search Engine Optimization for Large Language Models",
+        "authors": "Fredrik Nestaas, Edoardo Debenedetti, Florian Tram\u00e8r",
+        "year": 2024,
+        "venue": "arXiv (cs.CR / cs.LG); OpenReview",
+        "url": "https://arxiv.org/abs/2406.18382",
+        "key_findings": "Introduces black-box 'Preference Manipulation Attacks' validated on production systems. On Bing Copilot, attacked fake products were recommended 59.4% of the time vs 34.0% without the attack, making them ~2.5x more likely to be recommended; attacked fake cameras reached the recommendation rate of real reputable brands (Nikon/Fujifilm ~57.9%). For plugin/tool selection with GPT-4 and Claude 3 Opus, adversarial plugin descriptions reached up to 7.2x higher selection likelihood, with some going from 0% to >90% selection. Used 50 dummy webpages. External injection on unrelated pages succeeded up to 25% on Bing (higher on Perplexity), and 80% of successful external attacks occurred without the LLM citing the injection source. Multiple simultaneous attackers create a prisoner's dilemma degrading all outputs; Claude 3 Opus sometimes refused to recommend at all.",
+        "method_to_adapt": "Directly reuse (1) the attacked-vs-benign recommendation-rate contrast on a fixed catalog, and (2) the KNOWN-reputable-brand-vs-UNKNOWN-provider comparison (unknown fake product competing with real Nikon/Fujifilm) \u2014 this is the closest existing analog to the program's known-vs-unknown-entity design. Their plugin/tool-description injection setup maps onto the controlled Bedrock search-tool experiment, and their multi-attacker prisoner's-dilemma protocol is reusable.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2406.18382",
+          "notes": "Verified on arXiv: title, authors (Fredrik Nestaas, Edoardo Debenedetti, Florian Tram\u00e8r), year 2024, subjects cs.CR and cs.LG all match the citation. Paper introduces \"Preference Manipulation Attacks\" against LLM search engines/plugins."
+        }
+      },
+      {
+        "title": "GEO: Generative Engine Optimization",
+        "authors": "Pranjal Aggarwal, Vishvak Murahari, Tanmay Rajpurohit, Ashwin Kalyan, Karthik Narasimhan, Ameet Deshpande",
+        "year": 2024,
+        "venue": "KDD 2024",
+        "url": "https://arxiv.org/abs/2311.09735",
+        "key_findings": "Foundational white-hat framing. Introduces GEO and the GEO-bench benchmark (diverse user queries across multiple domains with relevant web sources). Legitimate content edits \u2014 adding cited sources, quotations, statistics, and authoritative/fluent language \u2014 boost a source's visibility in generative-engine answers by up to 40%. Effectiveness varies strongly by domain, motivating domain-specific optimization. Defines position-adjusted, word-count-weighted 'visibility'/impression metrics over generated answers.",
+        "method_to_adapt": "Reuse the taxonomy of 9 white-hat content optimizations (cite sources, add statistics, quotation addition, authoritative tone, fluency, keyword stuffing, etc.) as the legitimate baseline arm to contrast against adversarial injection, and adopt their impression/visibility metrics (position- and word-count-weighted citation share) to score how prominently a source appears in an answer.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2311.09735",
+          "notes": "Verified on arXiv: title, author list, venue (accepted to KDD 2024), and year 2024 all match. arXiv preprint originally submitted Nov 2023, but KDD publication year is 2024 as claimed."
+        }
+      },
+      {
+        "title": "PoisonedRAG: Knowledge Corruption Attacks to Retrieval-Augmented Generation of Large Language Models",
+        "authors": "Wei Zou, Runpeng Geng, Binghui Wang, Jinyuan Jia",
+        "year": 2025,
+        "venue": "USENIX Security 2025 (arXiv Feb 2024)",
+        "url": "https://arxiv.org/abs/2402.07867",
+        "key_findings": "First systematic knowledge-corruption attack on RAG. Injecting just 5 crafted malicious texts per target question into a knowledge database of MILLIONS of texts achieves a 90% attack success rate at forcing an attacker-chosen answer. Formalizes the attack as two conditions the poisoned text must satisfy \u2014 a retrieval condition (be retrieved for the query) and a generation condition (steer the answer once retrieved) \u2014 with both black-box and white-box variants. Evaluated defenses (paraphrasing, perplexity-based filtering, duplicate removal) are shown insufficient.",
+        "method_to_adapt": "Adopt the two-condition decomposition (retrieval condition vs generation condition) and the 'inject K documents into a corpus of size N, measure ASR as a function of K' protocol. Because the program fully controls the artificial search tool's returned results, the retrieval condition is trivially satisfied, isolating the generation/persuasion condition as the clean variable to study.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2402.07867",
+          "notes": "Verified on arXiv: title, authors (Wei Zou, Runpeng Geng, Binghui Wang, Jinyuan Jia), venue (USENIX Security Symposium 2025), and URL all match. arXiv submission Feb 2024 as claimed."
+        }
+      },
+      {
+        "title": "StealthRank: LLM Ranking Manipulation via Stealthy Prompt Optimization",
+        "authors": "Yiming Tang, Yi Fan, Chenxiao Yu, Tiankai Yang, Yue Zhao, Xiyang Hu",
+        "year": 2025,
+        "venue": "arXiv (cs.IR); under review (TMLR)",
+        "url": "https://arxiv.org/abs/2504.05804",
+        "key_findings": "Generates fluent, human-plausible 'StealthRank Prompts' (SRPs) embedded in product/document descriptions using energy-based optimization with Langevin dynamics, jointly optimizing rank elevation, linguistic coherence, and avoidance of promotional keywords. Evaluated on Llama-3.1-8B, Vicuna-7B, Mistral-7B, and DeepSeek-7B using Rank (lower better), Perplexity (lower better), and Bad Word Ratio (lower better). Reported to consistently outperform the STS (Kumar & Lakkaraju) and TAP baselines on both rank elevation and naturalness/stealth (exact percentages not in abstract/summary).",
+        "method_to_adapt": "Reuse the stealth metric pair \u2014 perplexity ratio (fluency) and 'bad word ratio' (keyword-detector evasion) \u2014 alongside rank, to quantify the detectability-vs-effectiveness tradeoff of injected superlatives/authority claims; use their fluency-constrained optimization as the 'stealthy' arm versus raw gibberish GCG strings.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2504.05804",
+          "notes": "arXiv abs page confirms exact title, all six authors in the same order, submitted 8 Apr 2025 (revised 23 May 2025), primary category cs.IR. Metadata is correct; the \"under review (TMLR)\" claim could not be independently confirmed from the arXiv page but is plausible and not contradicted."
+        }
+      },
+      {
+        "title": "GEO-Bench: Benchmarking Ranking Manipulation in Generative Engine Optimization",
+        "authors": "Ojas Nimase, Zhe Chen, Gengpei Qi, Yue Zhao, Xiyang Hu",
+        "year": 2026,
+        "venue": "arXiv (cs.CR)",
+        "url": "https://arxiv.org/abs/2605.29107",
+        "key_findings": "Unified benchmark evaluating ranking-manipulation under one protocol across 5 datasets against a fixed open-weight ranker (Llama-3.1-8B-Instruct). Compares black-box prompt attacks (TAP, Zero-Shot), white-box gradient attacks (STS, RAF, StealthRank), and 10 white-hat C-SEO strategies. Effectiveness metrics: NRG (normalized rank gain), Success@alpha, Promote@alpha; stealth metrics: keyword violation rate and perplexity ratio. Key result: black-box content rewriting matches or exceeds gradient-based attacks on rank promotion while producing more fluent text and evading BOTH keyword- and perplexity-based detection on some domains.",
+        "method_to_adapt": "Adopt the ready-made scoring rubric \u2014 NRG, Success@alpha, Promote@alpha for effectiveness and keyword-violation-rate + perplexity-ratio for stealth \u2014 and the three-way taxonomy (black-box prompt / white-box gradient / white-hat C-SEO) as the experimental arms for comparing manipulation strategies on Claude.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2605.29107",
+          "notes": "Verified on arXiv: title, author list (Ojas Nimase, Zhe Chen, Gengpei Qi, Yue Zhao, Xiyang Hu), year 2026 (submitted May 27, 2026), and venue arXiv cs.CR (cross-listed cs.AI) all match the citation. No corrections needed."
+        }
+      },
+      {
+        "title": "The Vulnerability of LLM Rankers to Prompt Injection Attacks",
+        "authors": "Yu Yin, Shuai Wang, Bevan Koopman, Guido Zuccon",
+        "year": 2026,
+        "venue": "arXiv (cs.CR / cs.IR)",
+        "url": "https://arxiv.org/abs/2602.16752",
+        "key_findings": "Systematic study of jailbreak/prompt-injection embedded in candidate documents across Qwen3 (0.6B-32B), Gemma-3 (1B-27B), LLaMA-3.3-70B, GPT-4.1-mini, Flan-T5 (0.8B/3B), and a Qwen3-30B-A3B MoE. Two injection variants: Decision Objective Hijacking (DOH) and Decision Criteria Hijacking (DCH). Vulnerability by paradigm: pairwise DOH ASR 87.82-100%; setwise most vulnerable (DOH 73.03-99.82%, DCH 36.83-99.31%); listwise least vulnerable (DOH 8.27-54.93%). Ranking quality collapsed from nDCG@10 0.6584 to 0.2947 under attack (55.2% relative decline). Encoder-decoder Flan-T5 was 10-15x more robust (mean ASR 3.21-3.28%). Back-placement injections caused larger nDCG@10 drops (mean gap 0.1106) than front placement in 14/15 models, showing strong position sensitivity.",
+        "method_to_adapt": "Reuse the DOH vs DCH injection taxonomy, the pairwise/listwise/setwise prompting-paradigm comparison, the dual-metric evaluation (ASR for preference flip + nDCG@10 for ranking degradation), and especially the front-vs-back document-placement manipulation to test how the ordering of Claude's tool results changes susceptibility.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2602.16752",
+          "notes": "Verified on arXiv: title, authors (Yu Yin, Shuai Wang, Bevan Koopman, Guido Zuccon), year 2026 (submitted Feb 18, 2026), venue arXiv (primary category cs.CR) all match the citation. Code at https://github.com/ielab/LLM-Ranker-Attack."
+        }
+      }
+    ]
+  },
+  {
+    "area": "rag-grounding",
+    "synthesis": "The RAG-grounding/attribution literature has matured through three phases. Phase 1 (2023) established that commercial generative search engines are badly grounded and built the measurement vocabulary: Liu et al.'s human audit of Bing Chat, NeevaAI, Perplexity, and YouChat defined citation recall (share of sentences fully supported by their citations; average 51.5%) and citation precision (share of citations that support their sentence; 74.5%), and found fluency inversely related to verifiability. ALCE (Gao et al., EMNLP 2023) automated these metrics with NLI entailment checks over fixed retrieval corpora (ASQA, QAMPARI, ELI5), showing even the best LLMs lack complete citation support 50% of the time on ELI5; RAGAS contributed the reference-free statement-decomposition faithfulness metric that became the industry-standard eval framework. Phase 2 (2024) built resources and interrogated the metrics themselves: RAGTruth (ACL 2024) provides ~18k RAG responses with word-level hallucination annotations and a contradiction-vs-baseless-addition taxonomy, showing small fine-tuned detectors match GPT-4 prompting; AttributionBench (ACL 2024 Findings) showed automatic attribution judging is itself hard \u2014 fine-tuned GPT-3.5 hits only ~80% macro-F1 \u2014 establishing a measurement noise floor that any LLM-judged experiment must account for.\n\nPhase 3 (2024-2026) moved from correlational support-checking to causal attribution and system-level audits. ContextCite (NeurIPS 2024) attributes generations causally via random source ablations plus a Lasso surrogate (32 passes suffice, beating attention/gradient/similarity baselines on top-k log-prob-drop metrics) \u2014 a design that transfers almost directly to AEO experiments with a controlled search tool. L-CiteEval (11 tasks, 8K-48K contexts, 11 models) dissociated answer quality from citation quality, showing open-source long-context models answer from parametric knowledge rather than provided context while closed models ground better, and that RAG improves faithfulness at slight quality cost. At the system level, the Tow Center's 1,600-query audit of 8 AI search engines found >60% of provenance answers incorrect, fabricated URLs in over half of Gemini/Grok-3 responses, and confident non-disclosure of uncertainty; CITETRACE (2026) scaled this to 761k citation pairs across 10 models, finding 30.6% of citations distort their sources, 27.1% come from domain-inappropriate sources, and \u2014 critically for experimental design \u2014 provider identity explains 88-96% of citation-quality variance.\n\nMethodologically, the field has converged on: (a) sentence/claim-level citation precision-recall via NLI or LLM judges (ALCE, RAGAS lineage), validated against human annotation (AttributionBench); (b) fixed or fully controlled retrieval corpora to isolate generation behavior from retrieval variance (ALCE, ContextCite); (c) ablation-based causal attribution rather than attention or similarity heuristics; and (d) multi-dimensional failure taxonomies (RAGTruth's contradiction/baseless split; CITETRACE's intent-alignment/source-suitability/fidelity dimensions) replacing binary supported/unsupported labels. Consistent quantitative picture: roughly half of generated sentences lack full citation support, a quarter to a third of citations misrepresent or inappropriately source their claims, and these rates are strongly provider-dependent.",
+    "gaps": "The literature measures the answer-to-source direction (is the generated text faithful to what was cited?) almost exclusively; the source-to-answer direction that matters for AEO \u2014 which manipulable properties of a source (authority signals, structure, statistics, quotes, freshness cues, domain, schema markup) causally increase its probability of being selected and cited when retrieval is held constant \u2014 is essentially unstudied within the grounding literature. Specific openings a startup could own: (1) No published work runs controlled source-content manipulations through an artificial search tool against a single frontier model to estimate per-feature causal citation effects; ContextCite's ablation+surrogate design provides the statistical machinery but has only been used for interpretability on open models with log-probs, never adapted to behavioral outcomes (cited/not-cited, claim-included/excluded) on closed API models like Claude on Bedrock. (2) No work crosses entity familiarity (known-to-training-corpus vs fabricated entities) with controlled retrieval to measure how parametric knowledge modulates grounding, citation rates, and source-conflict resolution \u2014 L-CiteEval only infers parametric answering indirectly from open/closed model gaps. (3) Conflict conditions are underexplored: what happens to citation precision when planted sources contradict the model's parametric knowledge, and whether the model silently overrides, cites-but-distorts (CITETRACE's 30.6% distortion rate suggests this is common), or flags the conflict. (4) Position/ordering and result-count effects on citation likelihood within a controlled result set are not measured anywhere in this literature. (5) All NLI/LLM-judge grounding metrics are validated on Wikipedia/news-style corpora; their reliability on commercial and marketing web content (the actual AEO substrate) is unknown, and AttributionBench's ~80% judge ceiling suggests domain shift could be severe. (6) No longitudinal tracking of citation-quality or source-selection drift across model versions, which a startup running a standing Bedrock harness could publish as a recurring measurement study.",
+    "papers": [
+      {
+        "title": "Evaluating Verifiability in Generative Search Engines",
+        "authors": "Nelson F. Liu, Tianyi Zhang, Percy Liang",
+        "year": 2023,
+        "venue": "Findings of EMNLP 2023 (arXiv:2304.09848)",
+        "url": "https://arxiv.org/abs/2304.09848",
+        "key_findings": "Human-evaluation audit of four commercial generative search engines (Bing Chat, NeevaAI, Perplexity.ai, YouChat) on diverse queries (historical Google queries plus Reddit questions). On average only 51.5% of generated sentences were fully supported by their citations (citation recall) and only 74.5% of citations actually supported the sentence they were attached to (citation precision), despite responses appearing fluent and informative. Fluency/perceived-utility and verifiability were found to be in tension across engines.",
+        "method_to_adapt": "The citation recall / citation precision definitions and the sentence-level human annotation protocol (full/partial/no support judgments per verification-worthy sentence) \u2014 these are the natural primary dependent variables for our controlled-search-tool experiments on Claude, and the paper is the canonical baseline to compare our measured citation quality against.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2304.09848",
+          "notes": "Verified via arXiv abs page and ACL Anthology (https://aclanthology.org/2023.findings-emnlp.467/). All metadata correct: authors Nelson F. Liu, Tianyi Zhang, Percy Liang; Findings of EMNLP 2023, pp. 7001-7025, Singapore; arXiv:2304.09848."
+        }
+      },
+      {
+        "title": "Enabling Large Language Models to Generate Text with Citations (ALCE)",
+        "authors": "Tianyu Gao, Howard Yen, Jiatong Yu, Danqi Chen",
+        "year": 2023,
+        "venue": "EMNLP 2023 (arXiv:2305.14627)",
+        "url": "https://arxiv.org/abs/2305.14627",
+        "key_findings": "First automatic benchmark for LLM citation evaluation (ALCE), built on three datasets (ASQA, QAMPARI, ELI5) each paired with a fixed retrieval corpus. Evaluates fluency, correctness, and citation quality (precision/recall) with automatic metrics shown to correlate strongly with human judgments. On ELI5 even the best models lack complete citation support 50% of the time; identified better retrievers, long-context LLMs, and multi-source synthesis as the main levers.",
+        "method_to_adapt": "The NLI-based automatic citation precision/recall pipeline (an entailment model checks whether each cited passage supports each sentence) \u2014 this lets us score thousands of Claude responses without human raters. ALCE's fixed-retrieval-corpus design is also structurally identical to our artificial search tool setup, so its datasets can serve as calibration material.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2305.14627",
+          "notes": "Verified via arXiv abs page: title, authors (Tianyu Gao, Howard Yen, Jiatong Yu, Danqi Chen), year 2023, and EMNLP 2023 acceptance all match. ALCE is the benchmark introduced. ACL Anthology version: https://aclanthology.org/2023.emnlp-main.398/"
+        }
+      },
+      {
+        "title": "RAGAs: Automated Evaluation of Retrieval Augmented Generation",
+        "authors": "Shahul Es, Jithin James, Luis Espinosa-Anke, Steven Schockaert",
+        "year": 2023,
+        "venue": "EACL 2024 System Demonstrations (arXiv:2309.15217)",
+        "url": "https://aclanthology.org/2024.eacl-demo.16/",
+        "key_findings": "Reference-free RAG evaluation framework requiring no ground-truth annotations. Core metrics: faithfulness (decompose the answer into atomic statements, use an LLM to verify each against retrieved context), answer relevance, and context relevance/precision/recall. Now the de facto industry-standard open-source RAG eval framework; the paper is a demo/framework contribution rather than a large quantitative study.",
+        "method_to_adapt": "The statement-decomposition faithfulness metric: split Claude's answer into atomic claims and LLM-verify each against our fully controlled search results. Because it is reference-free, it works even for our fictional/unknown-entity conditions where no ground truth exists outside the planted sources.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://aclanthology.org/2024.eacl-demo.16/",
+          "corrected_year": 2024,
+          "notes": "Paper confirmed on ACL Anthology with matching title, authors, and venue (EACL 2024 System Demonstrations). The published venue year is 2024; 2023 is the arXiv preprint year (arXiv:2309.15217, https://arxiv.org/abs/2309.15217). Cite as 2024 if referencing the EACL version."
+        }
+      },
+      {
+        "title": "RAGTruth: A Hallucination Corpus for Developing Trustworthy Retrieval-Augmented Language Models",
+        "authors": "Cheng Niu, Yuanhao Wu, Juno Zhu, Siliang Xu, KaShun Shum, Randy Zhong, Juntong Song, Tong Zhang",
+        "year": 2024,
+        "venue": "ACL 2024 (arXiv:2401.00396)",
+        "url": "https://aclanthology.org/2024.acl-long.585/",
+        "key_findings": "Corpus of ~18,000 naturally generated RAG responses from diverse LLMs with manual annotation at response and word level, including hallucination-intensity ratings and a taxonomy of hallucination types (contradiction vs baseless information, evident vs subtle). Shows that a relatively small LLM fine-tuned on RAGTruth achieves hallucination-detection performance competitive with prompt-based GPT-4 detection.",
+        "method_to_adapt": "The word-level hallucination annotation scheme and taxonomy (unsupported-addition vs source-contradiction) \u2014 exactly the distinction we need when Claude's parametric knowledge conflicts with our planted search results. Their fine-tuned-detector recipe is a cheap scalable grounding scorer for our experiment pipeline.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://aclanthology.org/2024.acl-long.585/",
+          "notes": "Verified: ACL 2024 long paper (pp. 10862-10878), arXiv:2401.00396, authors and year all match. Sources: ACL Anthology (https://aclanthology.org/2024.acl-long.585/), arXiv (https://arxiv.org/abs/2401.00396), dblp (https://dblp.org/rec/conf/acl/NiuWZXSZS024.html)."
+        }
+      },
+      {
+        "title": "AttributionBench: How Hard is Automatic Attribution Evaluation?",
+        "authors": "Yifei Li, Xiang Yue, Zeyi Liao, Huan Sun",
+        "year": 2024,
+        "venue": "Findings of ACL 2024 (arXiv:2402.15089)",
+        "url": "https://arxiv.org/abs/2402.15089",
+        "key_findings": "Unified benchmark compiled from multiple existing attribution datasets, framing attribution evaluation as binary classification (is this claim attributable to its cited evidence?). Even a fine-tuned GPT-3.5 reaches only ~80% macro-F1; analysis of 300+ error cases shows most failures come from fine-grained/nuanced information needs and mismatch between model knowledge and human annotator understanding.",
+        "method_to_adapt": "Use AttributionBench as a validation set for whatever automatic attribution judge we build: before trusting an LLM-as-judge citation-support metric in our Bedrock experiments, measure its macro-F1 here. The ~80% ceiling quantifies the measurement noise floor we must design around (e.g., with human spot-checks).",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://aclanthology.org/2024.findings-acl.886/",
+          "notes": "Verified on arXiv (2402.15089) and ACL Anthology (2024.findings-acl.886). Title, authors (Yifei Li, Xiang Yue, Zeyi Liao, Huan Sun), year 2024, and venue Findings of ACL 2024 all match."
+        }
+      },
+      {
+        "title": "ContextCite: Attributing Model Generation to Context",
+        "authors": "Benjamin Cohen-Wang, Harshay Shah, Kristian Georgiev, Aleksander Madry",
+        "year": 2024,
+        "venue": "NeurIPS 2024 (arXiv:2409.00729)",
+        "url": "https://arxiv.org/abs/2409.00729",
+        "key_findings": "Causal context-attribution method: randomly ablate subsets of context sources (32-256 ablation passes), fit a Lasso sparse linear surrogate predicting response log-probability from source inclusion, and read attribution scores off the weights. With only 32 ablations it consistently matches or outperforms attention-, gradient-, and similarity-based baselines on TyDi QA, HotpotQA, and CNN/DailyMail with Llama-3-8B and Phi-3-mini, evaluated by top-k log-prob drop and linear datamodeling score; context pruning with its scores yields 10-40% F1 improvements on QA.",
+        "method_to_adapt": "The source-ablation experimental design is the single most reusable element for AEO: systematically include/exclude/permute our controlled search results and measure the causal effect of each source on Claude's answer. Since Bedrock does not expose log-probs, adapt the surrogate to behavioral outcomes (was the source cited, did its claim appear in the answer) instead of log-probability.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2409.00729",
+          "notes": "All metadata correct. Title, authors (Benjamin Cohen-Wang, Harshay Shah, Kristian Georgiev, Aleksander Madry), year 2024, and venue (NeurIPS 2024 poster; in NeurIPS 2024 proceedings) confirmed via arXiv abs page, neurips.cc virtual poster page, and proceedings.neurips.cc."
+        }
+      },
+      {
+        "title": "L-CiteEval: Do Long-Context Models Truly Leverage Context for Responding?",
+        "authors": "Zecheng Tang, Keyan Zhou, Juntao Li, Baibei Ji, Jianye Hou, Min Zhang",
+        "year": 2024,
+        "venue": "arXiv:2410.02115 (Oct 2024)",
+        "url": "https://arxiv.org/abs/2410.02115",
+        "key_findings": "Multi-task benchmark for long-context understanding with citations: 11 tasks, contexts from 8K to 48K tokens, fully automated evaluation suite, 11 closed- and open-source long-context models tested. Open-source models substantially trail closed-source models in citation accuracy and recall even when answer quality is similar \u2014 evidence they answer from parametric knowledge rather than the provided context. RAG significantly improves faithfulness (with a slight generation-quality cost), and attention patterns correlate with citation generation.",
+        "method_to_adapt": "Their answer-quality-vs-citation-quality dissociation is precisely the instrument for our known-vs-unknown-entity manipulation: if Claude cites less (or differently) for entities it already knows, that separates parametric answering from context grounding. Reuse their automated citation accuracy/recall suite and context-length manipulation (8K-48K) to test whether source position/length changes citation odds.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2410.02115",
+          "notes": "Verified on arXiv: title, authors (Zecheng Tang, Keyan Zhou, Juntao Li, Baibei Ji, Jianye Hou, Min Zhang), year 2024, arXiv:2410.02115 (submitted Oct 3, 2024) all match the citation exactly."
+        }
+      },
+      {
+        "title": "AI Search Has a Citation Problem (Tow Center study of eight AI search engines)",
+        "authors": "Klaudia Ja\u017awi\u0144ska, Aisvarya Chandrasekar (Tow Center for Digital Journalism, Columbia University)",
+        "year": 2025,
+        "venue": "Columbia Journalism Review / Tow Center (Mar 2025)",
+        "url": "https://www.cjr.org/tow_center/we-compared-eight-ai-search-engines-theyre-all-bad-at-citing-news.php",
+        "key_findings": "1,600 queries (20 publishers x 10 articles x 8 chatbots: ChatGPT Search, Perplexity free/Pro, DeepSeek, Copilot, Grok-2/3, Gemini) asking engines to identify headline, publisher, date, and URL of pasted article excerpts. Over 60% of responses contained incorrect information; Perplexity erred on 37% of queries, Grok-3 on 94%. More than half of Gemini and Grok-3 responses cited fabricated URLs (154/200 for Grok-3). ChatGPT expressed uncertainty only 15 times across 200 responses despite 134 incorrect answers; premium tiers were more confidently wrong than free tiers.",
+        "method_to_adapt": "The provenance-identification task design (give the engine content, ask it to attribute headline/publisher/date/URL) and the 5-level grading rubric (correct / correct-incomplete / partially incorrect / completely incorrect / declined) \u2014 a cheap live-engine audit protocol to run against production Claude/Perplexity/ChatGPT as an external-validity complement to our controlled Bedrock experiments; also directly measures fabricated-URL rates, a key AEO trust metric.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://www.cjr.org/tow_center/we-compared-eight-ai-search-engines-theyre-all-bad-at-citing-news.php",
+          "notes": "All metadata checks out: \"AI Search Has a Citation Problem\" by Klaudia Ja\u017awi\u0144ska and Aisvarya Chandrasekar, Tow Center for Digital Journalism study published in Columbia Journalism Review, March 2025. Tested eight AI search engines (Perplexity, Google AI Overviews, Bing/ChatGPT, Claude, Gemini, Meta AI, Grok, etc.); >60% of responses had incorrect citations. Not an arXiv/ACL paper \u2014 the CJR page is the canonical source. Corroborated by Nieman Lab coverage."
+        }
+      },
+      {
+        "title": "Verified Misguidance: Measuring Structural Citation Failures in Search-Augmented LLMs (CITETRACE)",
+        "authors": "Yongsik Seo, Wooseok Jeong, Eunyoung Kim, Hyeonseo Jang, Dongha Lee",
+        "year": 2026,
+        "venue": "arXiv:2605.28565 (May 2026)",
+        "url": "https://arxiv.org/abs/2605.28565",
+        "key_findings": "Introduces 'structural citation failures': citations to real, accessible sources that still mislead. CITETRACE evaluates 761,495 citation pairs from 112,000 responses across 10 models from 5 providers on 11,200 real-world queries from 28 communities, along three dimensions: intent-purpose alignment, source suitability, and answer-source fidelity. Findings: 30.6% of citations distort their sources, 27.1% come from domain-inappropriate sources, up to 96% of users encounter structurally misleading citations, and provider-level differences explain 88-96% of citation-quality variance.",
+        "method_to_adapt": "The three-dimension citation-failure taxonomy (intent alignment / source suitability / answer-source fidelity) goes beyond binary entailment and should structure our outcome coding. The finding that provider identity explains 88-96% of citation-quality variance directly justifies our single-provider (Claude/Bedrock) deep-dive design and warns against pooling across engines.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2605.28565",
+          "notes": "Verified on arXiv: title, author list (Yongsik Seo, Wooseok Jeong, Eunyoung Kim, Hyeonseo Jang, Dongha Lee), venue arXiv:2605.28565, submitted May 27, 2026. All cited metadata is correct; no corrections needed. CITETRACE is the dataset introduced in the paper."
+        }
+      }
+    ]
+  },
+  {
+    "area": "ranking-bias",
+    "synthesis": "The ranking-bias literature establishes, with strong convergent evidence, that LLM item selection from lists is a joint function of (a) where content sits in the context, (b) surface token/label priors, and (c) parametric priors about entity popularity and brand identity \u2014 and that all three are large relative to content quality signals. On position: Liu et al. (TACL 2024) show a U-shaped curve where mid-context placement costs GPT-3.5-Turbo ~22 accuracy points and can push performance below the no-retrieval baseline; Hou et al. (ECIR 2024) replicate this in candidate-ranking form (NDCG drops sharply when the target sits late in a 20-item list); and Pfrommer et al. (EMNLP 2024) confirm large context-position F-statistics for product ranking specifically. On label/order sensitivity: Zheng et al. (ICLR 2024) trace MCQ selection bias to option-ID token priors (position-D placement costs gpt-3.5-turbo 6.3 points; position-A gains llama-30B 15.2 points), Pezeshkpour & Hruschka (NAACL Findings 2024) find reordering alone moves accuracy 13-85% and localize the effect to cases of top-2 uncertainty, and Wang et al. (ACL 2024) show pairwise judgments flip on order swap at up to 82.5% conflict rate (ChatGPT) / 46.3% (GPT-4) \u2014 the LLM-as-judge finding that transfers most directly to head-to-head brand comparisons. The canonical LLM-judge paper (Zheng et al., NeurIPS 2023, arXiv 2306.05685) adds verbosity and self-enhancement biases to this taxonomy while showing GPT-4 judges reach >80% human agreement.\n\nOn entity priors: Hou et al. document popularity bias (frequent items ranked higher regardless of relevance), though Lichtenberg et al. (Gen-IR@SIGIR 2024) complicate the picture \u2014 a Claude-v2.1 recommender showed ~40% LESS popularity bias than the best collaborative-filtering baseline on MovieLens-10M, and prompt instructions cut it in half again, suggesting popularity bias in LLM recommendation is real but smaller and more steerable than feared. Kamruzzaman et al. (EMNLP 2024) show brand-name effects are systematic (global brands get positive attributes, tau up to 0.49; luxury recommended for high-income countries 88-100% of the time), and the 2026 Incumbent Advantage preprint (Chu & Hou) provides the sharpest decomposition yet for product recommendation: with identical specs the known brand wins 100% of trials, yet product parameters explain 82.4% of ranking variance vs 6.5% for position and only 1.2% for brand identity \u2014 the brand prior is a tie-breaker that collapses under a +0.075-star or 7.3%-price advantage, and authority-endorsement phrasing alone buys a 73.3% breakthrough rate. Pfrommer et al. close the loop to production: rankings are manipulable via injected content (82.94% of max possible rank gain on GPT-4 Turbo) and manipulations transfer to live Perplexity.\n\nMethodologically, the field has converged on a standard toolkit that our experiments should adopt wholesale: permutation-based measurement (position sweeps, both-order pairwise evaluation, bootstrapped shuffles) with variance-style metrics (RStd, conflict rate, F-statistics/eta-squared), prior-estimation debiasing (PriDe), and shuffle-aggregate mitigation (Hou's 3-round bootstrapping; Tang et al.'s permutation self-consistency, arXiv 2310.07712, which improves listwise ranking 7-18% for GPT-3.5 and 8-16% for LLaMA-2-70B). Effect sizes are consistently large enough that any AEO measurement that does not randomize result order and elicit repeatedly is confounded: single-order, single-shot rank measurements can be off by tens of percentage points.",
+    "gaps": "Seven concrete gaps a startup running controlled Bedrock/Claude experiments could fill: (1) No study jointly manipulates retrieval position AND entity familiarity AND content phrasing in a full factorial within a real tool-use loop \u2014 Liu et al. fix content and vary position; Chu & Hou vary brand and specs but use static prompt-stuffed product cards, not an agentic search tool the model queries itself. An artificial search tool with fully controlled results enables the missing eta-squared decomposition (position x brand-knownness x content features x domain signals) for citation/recommendation outcomes. (2) The known-vs-unknown-entity contrast is nearly unstudied with retrieval held constant: Chu & Hou use fictional brands but only in spec-card settings; nobody has measured how much retrieved evidence can compensate for absence from the training corpus (the core AEO question for new brands), nor whether 'unknown' entities suffer extra hallucination/attribution errors when cited. (3) Claude is badly under-measured: most quantitative results are GPT-family (Liu et al. used Claude-1.3; Lichtenberg used Claude-v2.1; Chu & Hou include one Claude Sonnet variant and find distinctive 'brand guardian' behavior \u2014 an unreplicated result worth testing). (4) Agentic-search biases upstream of ranking \u2014 which query the model formulates, which snippets it clicks/expands \u2014 are unmeasured; all existing work injects a fixed context. (5) No standardized AEO metric exists: RStd, conflict rate, Log Popularity Difference, and IAI are all adaptable but nobody has published a 'share-of-voice under order randomization with cluster-bootstrap CIs' benchmark for brand visibility in AI answers; industry GEO tools measure without controlling position/order confounds. (6) Position bias for CITATION (which sources get linked/attributed in the answer) vs SELECTION (which product gets recommended) may diverge \u2014 no paper separates them. (7) Temporal and cross-version stability is unknown: whether these biases drift across model releases and temperatures has no longitudinal measurement, and the multi-agent GEO equilibrium dynamics in Chu & Hou (first-mover advantage decaying with adoption, half-life 1.4 brands) are a single unreplicated preprint.",
+    "papers": [
+      {
+        "title": "Lost in the Middle: How Language Models Use Long Contexts",
+        "authors": "Nelson F. Liu, Kevin Lin, John Hewitt, Ashwin Paranjape, Michele Bevilacqua, Fabio Petroni, Percy Liang",
+        "year": 2023,
+        "venue": "TACL 2024 (arXiv 2307.03172)",
+        "url": "https://arxiv.org/abs/2307.03172",
+        "key_findings": "U-shaped position curve in multi-document QA: with 20 retrieved documents, GPT-3.5-Turbo accuracy is 75.8% when the relevant document is first, 53.8-57.3% when in the middle (positions 9-14), and 63.2% when last \u2014 a ~22 point swing. Middle-position performance falls BELOW the 56.1% closed-book (no documents) baseline, i.e., retrieval actively hurts if the answer is mid-context. Effect holds across GPT-3.5-Turbo (4K/16K), Claude-1.3 (8K/100K), MPT-30B-Instruct, and LongChat-13B, at 10/20/30-document context sizes, and replicates on synthetic key-value retrieval.",
+        "method_to_adapt": "The document-position sweep: hold retrieved content fixed and slide the target page through every rank slot of the artificial search tool's results, measuring citation/recommendation rate per slot. Their open dataset/code (github.com/nelson-liu/lost-in-the-middle) provides the multi-doc QA template; reuse the position-accuracy curve (and gap vs closed-book) as the core position-bias metric.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2307.03172",
+          "notes": "All metadata confirmed via arXiv abstract page. Published in TACL vol. 12 (2024); also at ACL Anthology: https://aclanthology.org/2024.tacl-1.9/. No corrections needed."
+        }
+      },
+      {
+        "title": "Large Language Models Are Not Robust Multiple Choice Selectors",
+        "authors": "Chujie Zheng, Hao Zhou, Fandong Meng, Jie Zhou, Minlie Huang",
+        "year": 2024,
+        "venue": "ICLR 2024 Spotlight (arXiv 2309.03882)",
+        "url": "https://arxiv.org/abs/2309.03882",
+        "key_findings": "Across 20 LLMs and 3 benchmarks (MMLU 13,592 samples, ARC-Challenge 1,165, CommonsenseQA 1,216), LLMs prefer specific option-ID tokens: moving the gold answer to position D cut gpt-3.5-turbo 0-shot MMLU accuracy 6.3 points (67.2%\u219260.9%); moving it to A boosted llama-30B 15.2 points (53.1%\u219268.2%). Root cause is token bias on option-ID tokens (A/B/C/D), not position of content per se. Their PriDe debiasing (estimate ID prior by permuting option contents on 5% of samples) improves accuracy +2.6 points averaged over 20 models at only 1.15x inference cost vs 4x for full cyclic permutation.",
+        "method_to_adapt": "Two reusable elements: (1) RStd \u2014 standard deviation of per-position recall \u2014 as the scalar selection-bias metric for any 'pick the best product from list' task; (2) the PriDe protocol \u2014 estimate the model's prior over list slots/labels by permuting item contents on a small calibration set, then subtract it \u2014 to separate slot bias from genuine brand/content preference in our stack-ranking experiments.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2309.03882",
+          "notes": "Verified via arXiv abs page: title, authors (Chujie Zheng, Hao Zhou, Fandong Meng, Jie Zhou, Minlie Huang), venue (ICLR 2024 Spotlight), and year all match the citation."
+        }
+      },
+      {
+        "title": "Large Language Models Sensitivity to The Order of Options in Multiple-Choice Questions",
+        "authors": "Pouya Pezeshkpour, Estevam Hruschka",
+        "year": 2024,
+        "venue": "Findings of NAACL 2024 (arXiv 2308.11483)",
+        "url": "https://aclanthology.org/2024.findings-naacl.130/",
+        "key_findings": "Reordering answer options alone produces performance gaps of roughly 13% to 85% across benchmarks for GPT-4 and InstructGPT in zero/few-shot settings. Sensitivity concentrates on items where the model is uncertain between its top-2/3 candidates; positional bias then decides the winner. Deliberate placement can adversarially amplify or mitigate the bias, and calibration strategies (including majority vote over orders) yield up to 8 percentage points improvement.",
+        "method_to_adapt": "The adversarial-placement stress test: identify the model's top-2 candidate products, then place them in positionally favored vs disfavored slots to bound worst-case/best-case rank outcomes; plus majority-vote aggregation across sampled orders as a variance-reduction baseline for our ranking measurements.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://aclanthology.org/2024.findings-naacl.130/",
+          "notes": "Citation verified: title, authors (Pouya Pezeshkpour, Estevam Hruschka), year 2024, venue Findings of NAACL 2024 (pp. 2006-2017, Mexico City), and arXiv 2308.11483 all match. Sources: ACL Anthology (https://aclanthology.org/2024.findings-naacl.130/) and arXiv (https://arxiv.org/abs/2308.11483)."
+        }
+      },
+      {
+        "title": "Large Language Models are not Fair Evaluators",
+        "authors": "Peiyi Wang, Lei Li, Liang Chen, et al.",
+        "year": 2024,
+        "venue": "ACL 2024 (arXiv 2305.17926)",
+        "url": "https://arxiv.org/abs/2305.17926",
+        "key_findings": "In pairwise LLM-as-judge comparisons, simply swapping the order of the two candidates flips the verdict at conflict rates up to 82.5% for ChatGPT and 46.3% for GPT-4. By ordering alone, Vicuna-13B's win rate against ChatGPT (ChatGPT as judge) moves from 2.5% to 82.5%, letting it 'beat' ChatGPT on 66 of 80 queries. Their calibration \u2014 Multiple Evidence Calibration + Balanced Position Calibration (evaluate both orders, average) \u2014 raises judge-human agreement from 52.7%\u219262.5% (GPT-4) and 44.4%\u219258.7% (ChatGPT), kappa 0.06\u21920.31.",
+        "method_to_adapt": "Balanced Position Calibration and the conflict-rate metric: every pairwise product/brand comparison in our experiments should be run in both orders, reporting conflict rate as the order-robustness statistic and averaged scores as the debiased preference. Directly transfers to head-to-head brand comparison prompts on Bedrock Claude.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://aclanthology.org/2024.acl-long.511/",
+          "notes": "All metadata verified correct: \"Large Language Models are not Fair Evaluators\" by Peiyi Wang, Lei Li, Liang Chen et al., ACL 2024 (Long Papers, pp. 9440-9450), arXiv:2305.17926 (first posted May 2023). arXiv abs page: https://arxiv.org/abs/2305.17926"
+        }
+      },
+      {
+        "title": "Large Language Models are Zero-Shot Rankers for Recommender Systems",
+        "authors": "Yupeng Hou, Junjie Zhang, Zihan Lin, Hongyu Lu, Ruobing Xie, Julian McAuley, Wayne Xin Zhao",
+        "year": 2024,
+        "venue": "ECIR 2024 (arXiv 2305.08845)",
+        "url": "https://arxiv.org/abs/2305.08845",
+        "key_findings": "LLMs (GPT-3.5, GPT-4, LLaMA-2-70B-chat, Vicuna-13B, Alpaca-7B) ranking 20 candidate items on MovieLens-1M and Amazon Games show (a) position bias \u2014 NDCG drops significantly when the ground-truth item is placed at the last few positions of the candidate list (tested at positions 0/5/10/15/19); (b) popularity bias \u2014 popular items (measured by item text frequency as a proxy for pretraining-corpus exposure) are ranked higher independent of relevance, and reliance on popularity grows as user-history signal shrinks. Bootstrapping \u2014 ranking each shuffled candidate set 3 times and aggregating \u2014 measurably alleviates position bias on both datasets.",
+        "method_to_adapt": "The bootstrapped-shuffle protocol (3+ rounds of randomized candidate order, aggregate ranks) as the standard measurement procedure, and their ground-truth-position sweep {0,5,10,15,19}. Also their popularity proxy (item-name frequency in public corpora) for stratifying our known-vs-unknown entity conditions. Code/data at github.com/RUCAIBox/LLMRank.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2305.08845",
+          "notes": "Verified via arXiv abs page: title, author list, and venue (accepted at ECIR 2024) all match. arXiv preprint first posted May 2023, published at ECIR 2024 as claimed."
+        }
+      },
+      {
+        "title": "Large Language Models as Recommender Systems: A Study of Popularity Bias",
+        "authors": "Jan Malte Lichtenberg, Alexander Buchholz, Pola Schw\u00f6bel",
+        "year": 2024,
+        "venue": "Gen-IR@SIGIR 2024 workshop (arXiv 2406.01285; Amazon Science)",
+        "url": "https://arxiv.org/abs/2406.01285",
+        "key_findings": "On MovieLens-10M (10M ratings, ~10K movies), they propose the Log Popularity Difference metric (mean log-popularity of recommended items minus mean log-popularity of the user's history). A Claude-v2.1-based recommender scores 0.377\u00b10.010 popularity bias vs UserKNN 0.630, ItemKNN 0.957, Top-Pop 1.455 \u2014 about 40% lower bias than the best collaborative-filtering baseline WITHOUT any mitigation \u2014 though at much lower accuracy (HR@5 0.042 vs 0.313 for UserKNN). Adding a debiasing instruction to the prompt cuts bias further to 0.181\u00b10.010 with minimal accuracy loss.",
+        "method_to_adapt": "The Log Popularity Difference metric \u2014 anti-symmetric, statistically robust, baseline-relative \u2014 adapts cleanly to answer engines: compare log-popularity (search volume / corpus frequency) of brands the model recommends vs brands present in the controlled retrieval set. Also notable: it was measured on Claude, matching our Bedrock target, and gives a prompt-side mitigation baseline.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2406.01285",
+          "notes": "Verified on arXiv: title, authors (Jan Malte Lichtenberg, Alexander Buchholz, Pola Schw\u00f6bel), year 2024, and venue (accepted at Gen-IR@SIGIR24 workshop) all match the citation."
+        }
+      },
+      {
+        "title": "\"Global is Good, Local is Bad?\": Understanding Brand Bias in LLMs",
+        "authors": "Mahammed Kamruzzaman, Hieu Minh Nguyen, Gene Louis Kim",
+        "year": 2024,
+        "venue": "EMNLP 2024 Main (arXiv 2406.13997)",
+        "url": "https://aclanthology.org/2024.emnlp-main.707/",
+        "key_findings": "Across GPT-4o, Llama-3-8B, Gemma-7B, Mistral-7B on 4 product categories (shoes, clothing, beverages, electronics; 8,728 test instances in Exp. 1), LLMs systematically associate global brands with positive attributes and local brands with negative ones (Kendall's tau 0.055-0.490, all p<0.001; GPT-4o tau=0.185 stimulus-to-attribute, Mistral tau=0.490 attribute-to-stimulus). Luxury-gift recommendation splits by country income: GPT-4o recommends luxury brands for high-income countries 98.88% of the time and non-luxury for low-income 98.02% (Gemma: 100%/83.94%). Country-of-origin effect: when a country is specified, local brands are preferred 75-85% of the time (GPT-4o 75.00%, Llama-3 84.95%), except Gemma (23.18%).",
+        "method_to_adapt": "The named-vs-nameless counterfactual design (identical product descriptions with brand name present vs removed \u2014 6,524 named vs 2,204 nameless instances) isolates the pure brand-name effect from content. Directly reusable in our controlled search tool: same page content, swap brand identity, measure recommendation-rate delta.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://aclanthology.org/2024.emnlp-main.707/",
+          "notes": "All metadata verified correct: title, authors (Mahammed Kamruzzaman, Hieu Minh Nguyen, Gene Louis Kim), EMNLP 2024 Main proceedings, arXiv 2406.13997."
+        }
+      },
+      {
+        "title": "Ranking Manipulation for Conversational Search Engines",
+        "authors": "Samuel Pfrommer, Yatong Bai, Tanmay Gautam, Somayeh Sojoudi",
+        "year": 2024,
+        "venue": "EMNLP 2024 Main (arXiv 2406.03589)",
+        "url": "https://arxiv.org/abs/2406.03589",
+        "key_findings": "Built RAGDOLL, a dataset of 1,147 real consumer-product webpages across 50 product categories (8 brands per category), and measured how conversational search LLMs rank products loaded into context. Natural rankings vary sharply by model: GPT-4 Turbo attends heavily to product names and only minimally to retrieved page content, while all models show large context-position sensitivity (Mixtral 8x22 position F-statistic ~127 median, up to ~252). Tree-of-Attacks-based prompt injections reliably promote low-ranked products: mean ranking-score gains of +5.00 for GPT-4 Turbo (82.94% of max possible), +6.02 for Llama-3-70B (95.74%), +4.13 Mixtral, +3.38 GPT-3.5. Injections crafted on GPT-4 Turbo transfer to production Perplexity (Sonar Large Online), improving target products ~3 positions on average and closing more than half the gap to rank 1.",
+        "method_to_adapt": "RAGDOLL (public) is the closest existing dataset to our planned artificial-search-tool experiments \u2014 real product pages, category-balanced, brand-controlled. Reuse their protocol: 10 repeated rank elicitations per condition to build empirical rank distributions, plus F-statistic decomposition of what drives rank (product name vs page content vs context position). Their transfer-to-Perplexity test is a template for validating Bedrock findings against production engines.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2406.03589",
+          "notes": "Verified via arXiv abs page and ACL Anthology (https://aclanthology.org/2024.emnlp-main.534/). All metadata correct: authors Pfrommer, Bai, Gautam, Sojoudi; EMNLP 2024 Main; year 2024."
+        }
+      },
+      {
+        "title": "Incumbent Advantage: Brand Bias and Cognitive Manipulation Dynamics in LLM Recommendation Systems",
+        "authors": "Xi Chu, YuPeng Hou",
+        "year": 2026,
+        "venue": "arXiv preprint 2606.17443 (June 2026, not yet peer-reviewed)",
+        "url": "https://arxiv.org/abs/2606.17443",
+        "key_findings": "Across GPT-4o-mini, Claude Sonnet, and Gemini Flash (English+Chinese, temp 0.7): with identical product specs, the real/incumbent brand is recommended in 100% of 670 trials (Incumbent Advantage Index 10.0). But the advantage is fragile: when a competitor offers superior specs, incumbent recommendation collapses to 1.7-4.6% (2,769 trials); 50% breakthrough requires only +0.075 stars, a 7.3% price discount, or 1.6x review count (9,220 trials). Variance decomposition over 14,395 trials: product parameters explain 82.4% of ranking variance, position effects 6.5%, brand identity alone just 1.2%. Marketing-language manipulation: authority-endorsement phrasing achieves 73.3% breakthrough (worth the equivalent of +0.17 stars or a 15.3% price cut), social proof 50.7%, vs anchoring 12.9% and scarcity 11.7%. Multi-agent GEO competition is a prisoner's dilemma: incumbent survival is U-shaped \u2014 100% with no optimizers, 19.8% when one competitor uses authority language, 93.8% when all 9 optimize \u2014 and non-optimizing brands received 0 of 4,745 recommendations once competitors optimized.",
+        "method_to_adapt": "The most directly reusable design in this list: (1) fictional-vs-real brand pairing with identical spec cards operationalizes our known-vs-unknown-entity comparison; (2) breakthrough-threshold titration (minimum spec/price/review delta for 50% win rate) quantifies the 'cost' of being unknown; (3) factorial variance decomposition (brand x specs x position, eta-squared) and cluster-bootstrap CIs are the right statistical machinery for Bedrock experiments at nonzero temperature. Caveat: recent preprint, findings should be treated as needing replication \u2014 which is itself an opportunity.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2606.17443",
+          "notes": "Verified on arXiv: title, authors (Xi Chu, Trine University; Yupeng Hou, Texas A&M University), and ID 2606.17443 (June 2026 preprint) all match the citation. Not yet peer-reviewed, as claimed."
+        }
+      }
+    ]
+  },
+  {
+    "area": "memorization-probing",
+    "synthesis": "The memorization-probing literature converges on one robust empirical law: an LLM's parametric recall of facts about an entity is a steep, roughly log-linear function of how often that entity appears in the pretraining corpus, and scaling does not rescue the tail. Mallen et al. (ACL 2023) showed this with PopQA (14k questions; popularity = Wikipedia pageviews): accuracy tracks log-popularity, retrieval augmentation lets small models beat models orders of magnitude larger on unpopular entities, and an adaptive per-relation popularity threshold determines when retrieval is worth it. Kandpal et al. (ICML 2023) grounded the same result causally in corpus statistics \u2014 QA accuracy tracks the count of pretraining documents containing the question's entities, verified by counterfactual retraining, with models up to 176B needing \"many orders of magnitude\" more scale to answer rare-entity questions unaided. Sun et al.'s Head-to-Tail (NAACL 2024, 18,171 QA pairs, 16 LLMs) quantified the production-model picture with an Accuracy/Hallucination/Missing protocol: GPT-4 answers only 30.9% overall (head 40.3% / torso 33.4% / tail 19.0%, 19.7% hallucination), meaning the vast majority of torso-and-tail entities \u2014 which is where almost all businesses live \u2014 are effectively invisible to parametric memory. Carlini et al. (ICLR 2023) supplies the mechanism-level scaling laws (memorization log-linear in model size, duplication count, and prompt context; GPT-J 6B memorizes >=1% of the Pile).\n\nOn the question of deciding whether a specific entity is \"known\" to a model, the field offers three method families with very different reliability. (1) Sequence-level membership inference: Shi et al.'s Min-K% Prob (ICLR 2024) detects pretraining text from low-probability outlier tokens (+7.4% AUC on their WikiMIA temporal benchmark), but Duan et al. (COLM 2024, MIMIR) showed MIAs are near-random (AUC ~0.5) on Pythia 160M\u201312B under properly matched member/non-member distributions \u2014 apparent successes are mostly temporal-distribution-shift artifacts \u2014 so MIA alone cannot certify that a business is in-corpus. (2) Behavioral probing: Ferrando et al. (ICLR 2025 Oral) validated a simple black-box criterion (known = answers >=2 attribute questions correctly; unknown = 0) and showed, via sparse autoencoders on Gemma 2 and Llama 3.1, that models contain causal internal \"entity recognition\" directions \u2014 steering the unknown-entity direction forces ~100% refusal, and chat finetuning repurposes this mechanism for refusal behavior, so known vs unknown entities produce measurably different hedging/refusal profiles. (3) Controlled fictitious entities: Chang et al. (NeurIPS 2024) built 120 GPT-4-generated fictional Wikipedia-style passages with 1,800 tiered probes (memorization / paraphrase / compositional) and injected them into OLMo pretraining, finding power-law forgetting and faster forgetting of duplicated (vs paraphrased) text \u2014 establishing both the recipe for guaranteed-unknown entities and evidence that diverse paraphrased coverage beats verbatim repetition for durable knowledge. Finally, Longpre et al. (EMNLP 2021) established the counterfactual entity-substitution paradigm showing that models over-ride contradicting context in favor of memorized answers, precisely for well-memorized entities \u2014 the key predicted interaction between entity familiarity and trust in retrieved content.\n\nTogether these give a complete measurement toolkit for an answer-engine research program: corpus-side familiarity (entity-linked document counts, duplication counts), behavior-side familiarity (attribute-QA known/unknown labeling, A/H/M scoring, popularity-stratified accuracy curves), clean unknown controls (post-cutoff and GPT-4-fabricated entities, per WikiMIA and FICTIONAL KNOWLEDGE), and a conflict paradigm (entity substitution) for measuring when parametric memory overrides externally supplied search results.",
+    "gaps": "(1) No business-entity familiarity benchmark exists: every popularity-recall study (PopQA, EntityQuestions, Head-to-Tail) uses Wikipedia/Wikidata entities with pageview- or KG-based popularity; nothing covers companies, local businesses, SaaS products, or brands, whose familiarity signals are web mentions, reviews, directories, and news \u2014 a \"PopQA-for-businesses\" with mention-count stratification would be a novel, publishable dataset an AEO startup is uniquely positioned to build. (2) No validated API-only protocol for deciding whether a specific commercial entity is known to a closed production model: Min-K% needs token logprobs, MIA is near-random anyway (Duan et al.), and Ferrando et al.'s causal evidence requires internal activations; calibrating cheap behavioral probes (attribute-QA consistency, refusal/hedging rate, name-perturbation sensitivity) against ground truth from post-cutoff-founded businesses would fill this gap and is directly runnable on Bedrock. (3) The interaction between entity familiarity and tool-use behavior is unstudied: nobody has measured whether an RLHF'd agent searches more often, trusts retrieved snippets more, or cites differently for unknown vs known entities \u2014 the controlled-search-tool design (fully experimenter-controlled results, crossed with known/fictitious entities) directly extends Mallen et al.'s adaptive-retrieval threshold from a system-design knob to a behavioral audit of production answer engines. (4) Knowledge-conflict work (Longpre; successors) substitutes answers in Wikipedia-style passages; no one has tested parametric override with realistic commercial content (product pages, review snippets, marketing copy) or measured whether high familiarity makes a model resist corrected/updated facts about a brand \u2014 a concrete AEO risk for established businesses whose details changed after the cutoff. (5) Fictitious-entity injection (Chang et al.) is pretraining-time only; inference-time familiarity manipulation \u2014 fabricating a web presence for a fictitious business inside the controlled search tool and measuring how presentation (paraphrase diversity, duplication, source count) affects inclusion and citation in answers \u2014 is untouched, despite Chang's paraphrase-vs-duplication finding suggesting content-diversity effects that translate directly into AEO content strategy. (6) No study connects measured familiarity to answer-engine visibility outcomes: parametric-recall accuracy (Head-to-Tail's A/H/M) has never been linked to selection/ranking in open-ended recommendation queries (\"best X near me\"), citation probability, or hallucinated business attributes \u2014 the causal chain familiarity -> retrieval behavior -> answer inclusion is entirely open territory.",
+    "papers": [
+      {
+        "title": "When Not to Trust Language Models: Investigating Effectiveness of Parametric and Non-Parametric Memories (PopQA)",
+        "authors": "Alex Mallen, Akari Asai, Victor Zhong, Rajarshi Das, Daniel Khashabi, Hannaneh Hajishirzi",
+        "year": 2023,
+        "venue": "ACL 2023",
+        "url": "https://arxiv.org/abs/2212.10511 (ACL Anthology: https://aclanthology.org/2023.acl-long.546/)",
+        "key_findings": "Built PopQA, 14k entity-centric QA pairs from Wikidata triples with popularity measured by Wikipedia monthly page views; probed 10 LMs and 4 augmentation methods. LMs' factual recall is strongly correlated with entity popularity; scaling improves memorization of popular knowledge but 'fails to appreciably improve memorization of factual knowledge in the long tail.' Retrieval-augmented LMs largely outperform LMs orders of magnitude larger on low-popularity entities, while unassisted LMs remain competitive on high-popularity entities. Their 'adaptive retrieval' (retrieve only below a per-relation popularity threshold) improves accuracy while reducing inference cost vs always-retrieve.",
+        "method_to_adapt": "Reuse the PopQA dataset and its popularity-stratified design directly as a calibration set; adapt the core design element \u2014 plot accuracy vs log(popularity) and find the popularity threshold where retrieval flips from harmful/neutral to necessary \u2014 replacing Wikipedia pageviews with web-mention/traffic counts for business entities. The adaptive-retrieval threshold is exactly the quantity an AEO experiment on a controlled search tool should estimate for Claude.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://aclanthology.org/2023.acl-long.546/",
+          "notes": "Verified via ACL Anthology: title, authors (Mallen, Asai, Zhong, Das, Khashabi, Hajishirzi), venue (ACL 2023 Long Papers), and year all match. arXiv version at https://arxiv.org/abs/2212.10511. \"(PopQA)\" is the dataset name introduced by the paper, not part of the official title."
+        }
+      },
+      {
+        "title": "Head-to-Tail: How Knowledgeable are Large Language Models (LLMs)? A.K.A. Will LLMs Replace Knowledge Graphs?",
+        "authors": "Kai Sun, Yifan Ethan Xu, Hanwen Zha, Yue Liu, Xin Luna Dong",
+        "year": 2024,
+        "venue": "NAACL 2024 (Meta Reality Labs)",
+        "url": "https://arxiv.org/abs/2308.10168 (ACL Anthology: https://aclanthology.org/2024.naacl-long.18/; code: https://github.com/facebookresearch/head-to-tail)",
+        "key_findings": "18,171 QA pairs across 4 domains (Movie 3,093; Book 3,000; Academics 2,946; Open/DBpedia 9,132) bucketed into head/torso/tail by cumulative popularity (each bucket = 1/3 of total popularity mass; tail is ~80-95% of entities). Evaluated 16 LLMs with an A/H/M metric triple (Accuracy, Hallucination rate, Missing rate; models prompted to say 'unsure'). GPT-4: 30.9% overall accuracy, 19.7% hallucination; head 40.3% vs torso 33.4% vs tail 19.0% accuracy. ChatGPT: 20.3% accuracy. Even on top-0.5% most popular entities GPT-4 reached only ~46% accuracy with ~33% missing.",
+        "method_to_adapt": "Adopt the A/H/M (accuracy / hallucination / missing-with-'unsure'-option) scoring protocol and the cumulative-popularity head/torso/tail bucketing \u2014 this is the cleanest published template for measuring how Claude's parametric knowledge of businesses decays with prominence, and the template-based QA generation from structured records transfers directly from KGs to business-directory data.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://aclanthology.org/2024.naacl-long.18/",
+          "notes": "Verified. Title, authors, year (2024), and venue (NAACL 2024) all match; both the arXiv page (2308.10168) and ACL Anthology entry confirm the metadata. ACL Anthology lists second author as \"Yifan Xu\" (arXiv uses \"Yifan Ethan Xu\") \u2014 same person, not an error."
+        }
+      },
+      {
+        "title": "Large Language Models Struggle to Learn Long-Tail Knowledge",
+        "authors": "Nikhil Kandpal, Haikang Deng, Adam Roberts, Eric Wallace, Colin Raffel",
+        "year": 2023,
+        "venue": "ICML 2023 (PMLR v202)",
+        "url": "https://arxiv.org/abs/2211.08411 (PMLR: https://proceedings.mlr.press/v202/kandpal23a/kandpal23a.pdf)",
+        "key_findings": "Entity-linked entire pretraining corpora (e.g., ROOTS, The Pile) and counted documents containing the same salient entities as each QA pair; showed strong correlational AND causal (counterfactual document-removal retraining) relationships between relevant-document count and QA accuracy across TriviaQA/Natural Questions, multiple corpora, and models up to BLOOM-176B. Estimated that models 'must be scaled by many orders of magnitude' to reach competitive accuracy on questions with little pretraining support; retrieval augmentation sharply reduces dependence on relevant-document count.",
+        "method_to_adapt": "Reuse the pretraining-corpus co-occurrence count as the operational definition of entity familiarity: count mentions of a business entity in open corpora (C4/Pile/Common Crawl, e.g., via infini-gram or WIMBD tooling) and regress Claude's answer accuracy against log(document count). This gives a corpus-side familiarity axis to pair with behavioral probes, and predicts which businesses need retrieval (search) to be represented correctly.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2211.08411",
+          "notes": "Verified via arXiv abs page: title, authors (Kandpal, Deng, Roberts, Wallace, Raffel), and ICML 2023 venue all match. Published in PMLR v202 (proceedings.mlr.press/v202/kandpal23a.html). All metadata correct."
+        }
+      },
+      {
+        "title": "Detecting Pretraining Data from Large Language Models (Min-K% Prob / WikiMIA)",
+        "authors": "Weijia Shi, Anirudh Ajith, Mengzhou Xia, Yangsibo Huang, Daogao Liu, Terra Blevins, Danqi Chen, Luke Zettlemoyer",
+        "year": 2024,
+        "venue": "ICLR 2024",
+        "url": "https://arxiv.org/abs/2310.16789 (project: https://swj0419.github.io/detect-pretrain.github.io/; code: https://github.com/swj0419/detect-pretrain-code)",
+        "key_findings": "Introduces WikiMIA, a dynamic membership-inference benchmark built from Wikipedia events created before vs after a model's training cutoff (giving ground-truth member/non-member labels), and Min-K% Prob: score a text by the average log-probability of its k% lowest-probability tokens \u2014 unseen texts contain more low-probability outlier tokens. Requires no reference model or corpus knowledge. Achieves a 7.4% AUC improvement over prior methods on WikiMIA; successfully applied to copyrighted-book detection, downstream-contamination detection, and unlearning audits.",
+        "method_to_adapt": "Two reusable elements: (1) the temporal-split ground-truth construction \u2014 businesses/entities founded after Claude's training cutoff are guaranteed non-members, giving a clean unknown-entity control group without training anything; (2) Min-K% Prob itself as a corpus-membership score for text about a business, where token logprobs are available (open-weight reference models, or any Bedrock endpoint exposing logprobs).",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2310.16789",
+          "notes": "Verified: title, author list (Shi, Ajith, Xia, Huang, Liu, Blevins, Chen, Zettlemoyer), year 2024, and venue ICLR 2024 (poster) all match. OpenReview: https://openreview.net/forum?id=zWqr3MQuNs. Introduces the WikiMIA benchmark and Min-K% Prob method as claimed."
+        }
+      },
+      {
+        "title": "Do Membership Inference Attacks Work on Large Language Models? (MIMIR)",
+        "authors": "Michael Duan, Anshuman Suri, Niloofar Mireshghallah, Sewon Min, Weijia Shi, Luke Zettlemoyer, Yulia Tsvetkov, Yejin Choi, David Evans, Hannaneh Hajishirzi",
+        "year": 2024,
+        "venue": "COLM 2024",
+        "url": "https://arxiv.org/abs/2402.07841 (project: https://iamgroot42.github.io/mimir.github.io/)",
+        "key_findings": "Large-scale evaluation of MIAs (loss, reference-based, zlib, neighborhood, Min-K% etc.) on Pythia models from 160M to 12B trained on The Pile: MIAs 'barely outperform random guessing' (AUC near 0.5) across most model sizes and domains. Failure attributed to (1) near-one-epoch training over massive data and (2) inherently fuzzy member/non-member boundary due to high n-gram overlap between members and non-members. Apparent MIA success in prior work is largely driven by temporal/distribution shift between member and non-member sets rather than true memorization signal. Released the MIMIR unified benchmark.",
+        "method_to_adapt": "A critical negative control for our program: sequence-level membership inference is unreliable for deciding whether a specific business is 'in' the training corpus, so entity familiarity should be measured behaviorally (attribute-QA probes) rather than via MIA scores. Reuse the MIMIR codebase for baseline checks, and heed the temporal-shift confound when building known-vs-unknown entity sets (match entity sets on everything except cutoff date).",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2402.07841",
+          "notes": "Verified via arXiv abs page: title, all 10 authors, year 2024, and COLM 2024 venue all match the citation. MIMIR is the associated codebase/project name."
+        }
+      },
+      {
+        "title": "Do I Know This Entity? Knowledge Awareness and Hallucinations in Language Models",
+        "authors": "Javier Ferrando, Oscar Balcells Obeso, Senthooran Rajamanoharan, Neel Nanda",
+        "year": 2025,
+        "venue": "ICLR 2025 (Oral)",
+        "url": "https://arxiv.org/abs/2411.14257 (OpenReview: https://openreview.net/forum?id=WCRQFlji2q)",
+        "key_findings": "Using Gemma Scope sparse autoencoders on Gemma 2 2B/9B (replicated on Llama 3.1 8B), finds explicit internal 'entity recognition' directions that detect whether the model knows an entity (tested on Wikidata basketball players, movies, cities, songs; separation peaks ~layer 9). Directions are causal: steering with the 'unknown entity' latent induces ~100% refusal on questions even about known entities; orthogonalizing it out largely removes refusals and makes the model hallucinate attributes of unknown entities. Chat finetuning repurposes this base-model mechanism for refusal. An uncertainty direction classifies correct vs incorrect answers at 73.2 AUROC (F1 72).",
+        "method_to_adapt": "Directly reuse their black-box known/unknown labeling protocol: an entity is 'known' if the model correctly answers >=2 attribute questions and 'unknown' if it answers 0 (intermediate cases dropped) \u2014 this runs on Bedrock Claude with no internals needed and is the natural operationalization of 'is this business known to the model.' The paper also predicts a measurable behavioral signature (refusal/hedging rate shift) separating known from unknown businesses.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2411.14257",
+          "notes": "Verified: title, authors, and venue (ICLR 2025 Oral, OpenReview id WCRQFlji2q) all match. arXiv lists the second author as \"Oscar Obeso\" (short form of Oscar Balcells Obeso) \u2014 same person, no correction needed. arXiv submission was Nov 2024; the 2025 ICLR venue year is correct."
+        }
+      },
+      {
+        "title": "How Do Large Language Models Acquire Factual Knowledge During Pretraining?",
+        "authors": "Hoyeon Chang, Jinho Park, Seonghyeon Ye, Sohee Yang, Youngkyung Seo, Du-Seong Chang, Minjoon Seo",
+        "year": 2024,
+        "venue": "NeurIPS 2024",
+        "url": "https://arxiv.org/abs/2406.11813 (NeurIPS: https://proceedings.neurips.cc/paper_files/paper/2024/hash/6fdf57c71bc1f1ee29014b8dc52e723f-Abstract-Conference.html)",
+        "key_findings": "Built a FICTIONAL KNOWLEDGE dataset: 120 GPT-4-generated Wikipedia-style passages about non-existent entities (ECBD format), 9 paraphrases each, and 1,800 cloze probes (15 per passage) at three levels: verbatim memorization, semantic generalization (paraphrase), compositional generalization. Injected into OLMo-1B/7B pretraining at early/mid/late checkpoints. Findings: more pretraining data gives no significant improvement in knowledge-acquisition ability; forgetting follows a power law (retainability linear in log(steps), R^2 > 0.80); duplicated (verbatim-repeated) injections are forgotten faster than paraphrased ones; larger batch sizes (2048 vs 128) improve retention.",
+        "method_to_adapt": "Reuse the fictitious-entity generation recipe (GPT-4-generated, ECBD-style passages with memorization / paraphrase / compositional probe tiers) to manufacture guaranteed-unknown businesses for our controlled search-tool experiments \u2014 this is the published gold standard for creating entities provably absent from the training corpus, and the probe tiering separates 'can repeat the text' from 'has integrated the entity.'",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2406.11813",
+          "notes": "Verified: title, authors (Hoyeon Chang et al.), year 2024, and NeurIPS 2024 venue all match. arXiv page states \"Accepted at NeurIPS 2024\"; also confirmed via NeurIPS proceedings and OpenReview (TYdzj1EvBP)."
+        }
+      },
+      {
+        "title": "Entity-Based Knowledge Conflicts in Question Answering",
+        "authors": "Shayne Longpre, Kartik Perisetla, Anthony Chen, Nikhil Ramesh, Chris DuBois, Sameer Singh",
+        "year": 2021,
+        "venue": "EMNLP 2021",
+        "url": "https://aclanthology.org/2021.emnlp-main.565/ (code: https://github.com/apple/ml-knowledge-conflicts)",
+        "key_findings": "Foundational counterfactual-entity-substitution study: creates parametric-vs-contextual knowledge conflicts by swapping the gold answer entity in a supporting passage with a plausible substitute, then measuring whether the model answers from the (modified) passage or reverts to its memorized answer. Finds QA models substantially over-rely on parametric memory (a direct cause of hallucination), with over-reliance worsening for entities the model has memorized well; their mitigation (training on substituted data) improves out-of-distribution generalization by 4-7% and reduces hallucination on time-dependent queries. Released a reusable substitution framework.",
+        "method_to_adapt": "Reuse the entity-substitution framework and its 'memorization ratio' style metric as the core measurement in our controlled-search experiments: serve Claude fabricated search results that contradict its parametric knowledge about well-known vs unknown businesses and measure how often it repeats memorized facts vs grounds in the controlled results, as a function of entity familiarity.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://aclanthology.org/2021.emnlp-main.565/",
+          "notes": "Verified on ACL Anthology: title, authors (Longpre, Perisetla, Chen, Ramesh, DuBois, Singh), venue EMNLP 2021, and year all match the citation. Also available as arXiv:2109.05052; code repo github.com/apple/ml-knowledge-conflicts is the official one."
+        }
+      },
+      {
+        "title": "Quantifying Memorization Across Neural Language Models",
+        "authors": "Nicholas Carlini, Daphne Ippolito, Matthew Jagielski, Katherine Lee, Florian Tram\u00e8r, Chiyuan Zhang",
+        "year": 2023,
+        "venue": "ICLR 2023",
+        "url": "https://arxiv.org/abs/2202.07646 (OpenReview: https://openreview.net/pdf?id=TatRHT_1cK)",
+        "key_findings": "Establishes three log-linear laws of training-data memorization: extractable memorization grows log-linearly with (1) model capacity, (2) number of times an example is duplicated in training data, and (3) length of context used to prompt the model. GPT-J 6B verbatim-memorizes at least 1% of its training set (The Pile). Foundational quantitative basis for expecting frequency/duplication of an entity's text on the web to determine whether the model can reproduce it.",
+        "method_to_adapt": "Reuse the duplication-count and prompt-context-length manipulations as experimental axes: measure Claude's ability to complete distinctive text about a business (taglines, addresses, descriptions) as a function of how widely that text is duplicated across the web, and use increasing-context extraction prompts as a cheap probe of whether specific pages about an entity were in the corpus.",
+        "verification": {
+          "exists": true,
+          "canonical_url": "https://arxiv.org/abs/2202.07646",
+          "notes": "Verified on arXiv (2202.07646). Title, author list (Carlini, Ippolito, Jagielski, Lee, Tram\u00e8r, Zhang), and ICLR 2023 venue all match; posted to arXiv in 2022 and published at ICLR 2023, so the 2023 citation year is correct."
+        }
+      }
+    ]
+  }
+]

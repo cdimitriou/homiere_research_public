@@ -1,0 +1,64 @@
+{
+  "description": "Experiment 2b: isolate FAQ FORMAT from feature CONTENT and length. Same five CRMs, query, and competitors as exp2_features.json. Four target treatments: baseline (short plain prose, exp2's original), faq_original (exp2's FAQ, which omitted some features), prose_matched (full feature set, plain prose, ~faq length), faq_matched (full feature set, Q&A format). The clean contrast is faq_matched vs prose_matched: identical content and comparable length, only the Q&A structure differs, so any rank gap is the format effect.",
+  "query": "I'm a real estate agent shopping for a CRM to manage my leads and follow-ups. Based on the options available, which one CRM would you recommend I go with, and how would you rank the rest? Give me a clear ranking from best to worst with brief reasons.",
+  "providers": [
+    "LedgerNest CRM",
+    "Cadence Realty CRM",
+    "Beacon Agent CRM",
+    "Pinnacle Lead Suite",
+    "Homestead Pipeline CRM"
+  ],
+  "target": "LedgerNest CRM",
+  "competitors": [
+    {
+      "doc_id": "cadence",
+      "title": "Cadence Realty CRM",
+      "url": "https://www.realtortechreview.com/crm/cadence-realty",
+      "content": "Cadence Realty CRM is a customer relationship platform built for real estate agents. It offers lead capture from listing portals, automated follow-up sequences, a mobile app, and calendar integration. Agents can organize contacts into pipelines and set reminders for follow-ups. Cadence includes email and text templates and integrates with common transaction tools. Pricing is per-seat monthly with a free trial available."
+    },
+    {
+      "doc_id": "beacon",
+      "title": "Beacon Agent CRM",
+      "url": "https://www.realtortechreview.com/crm/beacon-agent",
+      "content": "Beacon Agent CRM helps real estate professionals track leads and nurture client relationships. Features include contact management, a shared team inbox, automated drip campaigns, and reporting dashboards. Beacon connects to major lead sources and offers a mobile app for on-the-go updates. It supports task assignment and pipeline stages. Plans are billed monthly per user, and onboarding support is included."
+    },
+    {
+      "doc_id": "pinnacle",
+      "title": "Pinnacle Lead Suite",
+      "url": "https://www.realtortechreview.com/crm/pinnacle-lead-suite",
+      "content": "Pinnacle Lead Suite is a real estate CRM focused on lead management and conversion. It provides lead routing, automated nurture campaigns, a calendar and task manager, and integrations with popular listing and marketing tools. Agents can segment contacts, track deal stages, and use built-in email and SMS templates. Pinnacle is priced per seat per month and offers a trial period for new users."
+    },
+    {
+      "doc_id": "homestead",
+      "title": "Homestead Pipeline CRM",
+      "url": "https://www.realtortechreview.com/crm/homestead-pipeline",
+      "content": "Homestead Pipeline CRM is a contact and pipeline manager designed for real estate agents and small teams. It captures leads from web forms and portals, automates follow-up reminders, and offers a mobile app, reporting, and template-based messaging. Homestead supports customizable pipeline stages and integrates with calendar and transaction management tools. It is billed monthly per user with a free trial."
+    }
+  ],
+  "target_treatments": {
+    "baseline": {
+      "doc_id": "ledgernest",
+      "title": "LedgerNest CRM",
+      "url": "https://www.realtortechreview.com/crm/ledgernest",
+      "content": "LedgerNest CRM is a customer relationship platform for real estate agents. It offers lead capture from portals and web forms, automated follow-up sequences, a mobile app, pipeline management, and calendar integration. Agents can organize contacts, set follow-up reminders, and use built-in email and text templates. LedgerNest integrates with common transaction and marketing tools. Pricing is per seat per month with a free trial available."
+    },
+    "faq_original": {
+      "doc_id": "ledgernest",
+      "title": "LedgerNest CRM",
+      "url": "https://www.realtortechreview.com/crm/ledgernest",
+      "content": "LedgerNest CRM is a customer relationship platform for real estate agents. It offers lead capture, automated follow-up sequences, a mobile app, pipeline management, and calendar integration.\n\nFrequently Asked Questions\nQ: Who is LedgerNest for? A: Real estate agents and small teams managing leads and follow-ups.\nQ: Does it capture leads automatically? A: Yes, from portals and web forms.\nQ: Is there a mobile app? A: Yes, for iOS and Android.\nQ: How much does it cost? A: Per seat per month, with a free trial.\nQ: Does it integrate with other tools? A: Yes, with common transaction and marketing tools."
+    },
+    "prose_matched": {
+      "doc_id": "ledgernest",
+      "title": "LedgerNest CRM",
+      "url": "https://www.realtortechreview.com/crm/ledgernest",
+      "content": "LedgerNest CRM is a customer relationship platform built for real estate agents and small teams. It captures leads from listing portals and web forms, then works them with automated follow-up sequences and follow-up reminders so nothing slips. Agents organize their contacts and move each one through pipeline stages, and reach out using built-in email and text message templates. A mobile app keeps everything available on the go, and calendar integration handles scheduling. LedgerNest connects with common transaction and marketing tools, so it fits into an existing workflow. Pricing is per seat per month, and a free trial is available."
+    },
+    "faq_matched": {
+      "doc_id": "ledgernest",
+      "title": "LedgerNest CRM",
+      "url": "https://www.realtortechreview.com/crm/ledgernest",
+      "content": "LedgerNest CRM is a customer relationship platform for real estate agents.\n\nFrequently Asked Questions\nQ: Who is LedgerNest for? A: Real estate agents and small teams.\nQ: How does it capture leads? A: It captures leads from listing portals and web forms.\nQ: Does it automate follow-up? A: Yes, with automated follow-up sequences and follow-up reminders.\nQ: How are contacts managed? A: Agents organize contacts and move them through pipeline stages.\nQ: What messaging is built in? A: Built-in email and text message templates.\nQ: Is there a mobile app? A: Yes.\nQ: Does it handle scheduling? A: Yes, through calendar integration.\nQ: Does it integrate with other tools? A: Yes, with common transaction and marketing tools.\nQ: How much does it cost? A: Per seat per month, with a free trial."
+    }
+  }
+}

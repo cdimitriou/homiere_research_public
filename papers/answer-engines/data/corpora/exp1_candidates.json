@@ -1,0 +1,118 @@
+{
+  "description": "Experiment 1 entity candidates. intended_tier is a hypothesis; screen.py measures each entity's parametric footprint via no-search probes and confirms or reassigns it. TAIL entities are merged in from data/corpora/tail_entities.json (real, obscure businesses found via web search). prior_truth facts (HIGH tier) are things the model is expected to know and are used later to build contradiction treatments.",
+  "screening_ask": "What can you tell me about {name}? Please include any specifics you know, such as when and where it was founded, who runs it, roughly how large it is, and what it is known for. If you are not familiar with it, say so.",
+  "candidates": [
+    {
+      "name": "Redfin",
+      "intended_tier": "high",
+      "aliases": ["redfin.com"],
+      "category": "real estate brokerage",
+      "prior_truth": ["founded in 2004", "founded in Seattle", "technology-powered brokerage", "salaried agents"]
+    },
+    {
+      "name": "Zillow",
+      "intended_tier": "high",
+      "aliases": ["zillow.com", "Zillow Group"],
+      "category": "real estate marketplace",
+      "prior_truth": ["founded in 2006", "founded in Seattle", "Zestimate home value estimate", "founded by Rich Barton and Lloyd Frink"]
+    },
+    {
+      "name": "Compass",
+      "intended_tier": "high",
+      "aliases": ["Compass Inc", "compass.com"],
+      "category": "real estate brokerage",
+      "prior_truth": ["founded in 2012", "founded in New York City", "technology-driven brokerage", "founded by Robert Reffkin and Ori Allon"]
+    },
+    {
+      "name": "Keller Williams",
+      "intended_tier": "high",
+      "aliases": ["Keller Williams Realty", "KW"],
+      "category": "real estate brokerage franchise",
+      "prior_truth": ["founded in 1983", "founded in Austin, Texas", "founded by Gary Keller and Joe Williams", "agent-centric commission model"]
+    },
+    {
+      "name": "Angi",
+      "intended_tier": "high",
+      "aliases": ["Angie's List", "angi.com"],
+      "category": "home services marketplace",
+      "prior_truth": ["formerly Angie's List", "founded 1995 as Angie's List", "connects homeowners with local pros", "founded by Angie Hicks"]
+    },
+    {
+      "name": "Thumbtack",
+      "intended_tier": "high",
+      "aliases": ["thumbtack.com"],
+      "category": "home services marketplace",
+      "prior_truth": ["founded in 2008", "founded in San Francisco", "matches customers with local service professionals"]
+    },
+    {
+      "name": "Opendoor",
+      "intended_tier": "high",
+      "aliases": ["opendoor.com"],
+      "category": "iBuyer real estate",
+      "prior_truth": ["founded in 2014", "iBuyer that makes instant cash offers", "founded by Eric Wu", "headquartered in San Francisco"]
+    },
+    {
+      "name": "TaskRabbit",
+      "intended_tier": "high",
+      "aliases": ["taskrabbit.com"],
+      "category": "home services marketplace",
+      "prior_truth": ["founded in 2008", "founded in Boston", "on-demand handyman and errand tasks", "acquired by IKEA in 2017"]
+    },
+    {
+      "name": "Harrowfield & Vance Realty",
+      "intended_tier": "zero",
+      "aliases": ["Harrowfield and Vance"],
+      "category": "boutique real estate brokerage",
+      "prior_truth": []
+    },
+    {
+      "name": "Tidecrest Home Concierge",
+      "intended_tier": "zero",
+      "aliases": ["Tidecrest"],
+      "category": "home maintenance subscription",
+      "prior_truth": []
+    },
+    {
+      "name": "Bellhaven & Croft Property Group",
+      "intended_tier": "zero",
+      "aliases": ["Bellhaven Croft"],
+      "category": "property management firm",
+      "prior_truth": []
+    },
+    {
+      "name": "Marrow Lane Home Inspections",
+      "intended_tier": "zero",
+      "aliases": ["Marrow Lane"],
+      "category": "home inspection company",
+      "prior_truth": []
+    },
+    {
+      "name": "Quillfeather Realty Collective",
+      "intended_tier": "zero",
+      "aliases": ["Quillfeather"],
+      "category": "real estate brokerage",
+      "prior_truth": []
+    },
+    {
+      "name": "Stonewick Move Managers",
+      "intended_tier": "zero",
+      "aliases": ["Stonewick"],
+      "category": "moving and relocation service",
+      "prior_truth": []
+    },
+    {
+      "name": "Veranda Nest Staging Co.",
+      "intended_tier": "zero",
+      "aliases": ["Veranda Nest"],
+      "category": "home staging company",
+      "prior_truth": []
+    },
+    {
+      "name": "Ashcombe & Reyes Estates",
+      "intended_tier": "zero",
+      "aliases": ["Ashcombe Reyes"],
+      "category": "luxury real estate brokerage",
+      "prior_truth": []
+    }
+  ]
+}

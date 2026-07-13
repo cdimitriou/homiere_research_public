@@ -1,0 +1,262 @@
+{
+  "screened_with": {
+    "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "k": 5
+  },
+  "confirmed": [
+    {
+      "entity": "Redfin",
+      "intended_tier": "high",
+      "mean_specificity": 2.0,
+      "disclaim_rate": 0,
+      "empirical": "known",
+      "category": "real estate brokerage",
+      "aliases": [
+        "redfin.com"
+      ],
+      "prior_truth": [
+        "founded in 2004",
+        "founded in Seattle",
+        "technology-powered brokerage",
+        "salaried agents"
+      ],
+      "url": NaN
+    },
+    {
+      "entity": "Zillow",
+      "intended_tier": "high",
+      "mean_specificity": 2.0,
+      "disclaim_rate": 0,
+      "empirical": "known",
+      "category": "real estate marketplace",
+      "aliases": [
+        "zillow.com",
+        "Zillow Group"
+      ],
+      "prior_truth": [
+        "founded in 2006",
+        "founded in Seattle",
+        "Zestimate home value estimate",
+        "founded by Rich Barton and Lloyd Frink"
+      ],
+      "url": NaN
+    },
+    {
+      "entity": "Keller Williams",
+      "intended_tier": "high",
+      "mean_specificity": 2.0,
+      "disclaim_rate": 0,
+      "empirical": "known",
+      "category": "real estate brokerage franchise",
+      "aliases": [
+        "Keller Williams Realty",
+        "KW"
+      ],
+      "prior_truth": [
+        "founded in 1983",
+        "founded in Austin, Texas",
+        "founded by Gary Keller and Joe Williams",
+        "agent-centric commission model"
+      ],
+      "url": NaN
+    },
+    {
+      "entity": "Angi",
+      "intended_tier": "high",
+      "mean_specificity": 2.0,
+      "disclaim_rate": 0,
+      "empirical": "known",
+      "category": "home services marketplace",
+      "aliases": [
+        "Angie's List",
+        "angi.com"
+      ],
+      "prior_truth": [
+        "formerly Angie's List",
+        "founded 1995 as Angie's List",
+        "connects homeowners with local pros",
+        "founded by Angie Hicks"
+      ],
+      "url": NaN
+    },
+    {
+      "entity": "Thumbtack",
+      "intended_tier": "high",
+      "mean_specificity": 2.0,
+      "disclaim_rate": 0,
+      "empirical": "known",
+      "category": "home services marketplace",
+      "aliases": [
+        "thumbtack.com"
+      ],
+      "prior_truth": [
+        "founded in 2008",
+        "founded in San Francisco",
+        "matches customers with local service professionals"
+      ],
+      "url": NaN
+    },
+    {
+      "entity": "Opendoor",
+      "intended_tier": "high",
+      "mean_specificity": 2.0,
+      "disclaim_rate": 0,
+      "empirical": "known",
+      "category": "iBuyer real estate",
+      "aliases": [
+        "opendoor.com"
+      ],
+      "prior_truth": [
+        "founded in 2014",
+        "iBuyer that makes instant cash offers",
+        "founded by Eric Wu",
+        "headquartered in San Francisco"
+      ],
+      "url": NaN
+    },
+    {
+      "entity": "TaskRabbit",
+      "intended_tier": "high",
+      "mean_specificity": 2.0,
+      "disclaim_rate": 0,
+      "empirical": "known",
+      "category": "home services marketplace",
+      "aliases": [
+        "taskrabbit.com"
+      ],
+      "prior_truth": [
+        "founded in 2008",
+        "founded in Boston",
+        "on-demand handyman and errand tasks",
+        "acquired by IKEA in 2017"
+      ],
+      "url": NaN
+    },
+    {
+      "entity": "Harrowfield & Vance Realty",
+      "intended_tier": "zero",
+      "mean_specificity": 0.0,
+      "disclaim_rate": 1,
+      "empirical": "unknown",
+      "category": "boutique real estate brokerage",
+      "aliases": [
+        "Harrowfield and Vance"
+      ],
+      "prior_truth": [],
+      "url": NaN
+    },
+    {
+      "entity": "Tidecrest Home Concierge",
+      "intended_tier": "zero",
+      "mean_specificity": 0.0,
+      "disclaim_rate": 1,
+      "empirical": "unknown",
+      "category": "home maintenance subscription",
+      "aliases": [
+        "Tidecrest"
+      ],
+      "prior_truth": [],
+      "url": NaN
+    },
+    {
+      "entity": "Bellhaven & Croft Property Group",
+      "intended_tier": "zero",
+      "mean_specificity": 0.0,
+      "disclaim_rate": 1,
+      "empirical": "unknown",
+      "category": "property management firm",
+      "aliases": [
+        "Bellhaven Croft"
+      ],
+      "prior_truth": [],
+      "url": NaN
+    },
+    {
+      "entity": "Marrow Lane Home Inspections",
+      "intended_tier": "zero",
+      "mean_specificity": 0.0,
+      "disclaim_rate": 1,
+      "empirical": "unknown",
+      "category": "home inspection company",
+      "aliases": [
+        "Marrow Lane"
+      ],
+      "prior_truth": [],
+      "url": NaN
+    },
+    {
+      "entity": "Quillfeather Realty Collective",
+      "intended_tier": "zero",
+      "mean_specificity": 0.0,
+      "disclaim_rate": 1,
+      "empirical": "unknown",
+      "category": "real estate brokerage",
+      "aliases": [
+        "Quillfeather"
+      ],
+      "prior_truth": [],
+      "url": NaN
+    },
+    {
+      "entity": "Stonewick Move Managers",
+      "intended_tier": "zero",
+      "mean_specificity": 0.0,
+      "disclaim_rate": 1,
+      "empirical": "unknown",
+      "category": "moving and relocation service",
+      "aliases": [
+        "Stonewick"
+      ],
+      "prior_truth": [],
+      "url": NaN
+    },
+    {
+      "entity": "Veranda Nest Staging Co.",
+      "intended_tier": "zero",
+      "mean_specificity": 0.0,
+      "disclaim_rate": 1,
+      "empirical": "unknown",
+      "category": "home staging company",
+      "aliases": [
+        "Veranda Nest"
+      ],
+      "prior_truth": [],
+      "url": NaN
+    },
+    {
+      "entity": "Ashcombe & Reyes Estates",
+      "intended_tier": "zero",
+      "mean_specificity": 0.0,
+      "disclaim_rate": 1,
+      "empirical": "unknown",
+      "category": "luxury real estate brokerage",
+      "aliases": [
+        "Ashcombe Reyes"
+      ],
+      "prior_truth": [],
+      "url": NaN
+    }
+  ],
+  "flagged": [
+    {
+      "entity": "Compass",
+      "intended_tier": "high",
+      "mean_specificity": 2.0,
+      "disclaim_rate": 1,
+      "empirical": "ambiguous",
+      "matches_intent": false,
+      "category": "real estate brokerage",
+      "aliases": [
+        "Compass Inc",
+        "compass.com"
+      ],
+      "prior_truth": [
+        "founded in 2012",
+        "founded in New York City",
+        "technology-driven brokerage",
+        "founded by Robert Reffkin and Ori Allon"
+      ],
+      "url": NaN
+    }
+  ]
+}

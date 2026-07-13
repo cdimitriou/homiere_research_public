@@ -1,0 +1,70 @@
+{
+  "description": "Experiment 2 content-feature ablation. Five comparable fictitious CRM products for realtors. Four are fixed 'competitor' pages of plain, comparable quality. The fifth (the target, LedgerNest) is rewritten under six feature treatments that are content-matched in length and core claims but differ in ONE presentation feature. The recommendation query asks the model to pick/rank the best option. By rotating the target's SERP position (Latin square) we separate content-feature effects from position bias. All entities are fictitious to remove parametric-prior confounds (validated by the same no-search screening approach as Experiment 1).",
+  "query": "I'm a real estate agent shopping for a CRM to manage my leads and follow-ups. Based on the options available, which one CRM would you recommend I go with, and how would you rank the rest? Give me a clear ranking from best to worst with brief reasons.",
+  "providers": ["LedgerNest CRM", "Cadence Realty CRM", "Beacon Agent CRM", "Pinnacle Lead Suite", "Homestead Pipeline CRM"],
+  "target": "LedgerNest CRM",
+  "competitors": [
+    {
+      "doc_id": "cadence",
+      "title": "Cadence Realty CRM",
+      "url": "https://www.realtortechreview.com/crm/cadence-realty",
+      "content": "Cadence Realty CRM is a customer relationship platform built for real estate agents. It offers lead capture from listing portals, automated follow-up sequences, a mobile app, and calendar integration. Agents can organize contacts into pipelines and set reminders for follow-ups. Cadence includes email and text templates and integrates with common transaction tools. Pricing is per-seat monthly with a free trial available."
+    },
+    {
+      "doc_id": "beacon",
+      "title": "Beacon Agent CRM",
+      "url": "https://www.realtortechreview.com/crm/beacon-agent",
+      "content": "Beacon Agent CRM helps real estate professionals track leads and nurture client relationships. Features include contact management, a shared team inbox, automated drip campaigns, and reporting dashboards. Beacon connects to major lead sources and offers a mobile app for on-the-go updates. It supports task assignment and pipeline stages. Plans are billed monthly per user, and onboarding support is included."
+    },
+    {
+      "doc_id": "pinnacle",
+      "title": "Pinnacle Lead Suite",
+      "url": "https://www.realtortechreview.com/crm/pinnacle-lead-suite",
+      "content": "Pinnacle Lead Suite is a real estate CRM focused on lead management and conversion. It provides lead routing, automated nurture campaigns, a calendar and task manager, and integrations with popular listing and marketing tools. Agents can segment contacts, track deal stages, and use built-in email and SMS templates. Pinnacle is priced per seat per month and offers a trial period for new users."
+    },
+    {
+      "doc_id": "homestead",
+      "title": "Homestead Pipeline CRM",
+      "url": "https://www.realtortechreview.com/crm/homestead-pipeline",
+      "content": "Homestead Pipeline CRM is a contact and pipeline manager designed for real estate agents and small teams. It captures leads from web forms and portals, automates follow-up reminders, and offers a mobile app, reporting, and template-based messaging. Homestead supports customizable pipeline stages and integrates with calendar and transaction management tools. It is billed monthly per user with a free trial."
+    }
+  ],
+  "target_treatments": {
+    "baseline": {
+      "doc_id": "ledgernest",
+      "title": "LedgerNest CRM",
+      "url": "https://www.realtortechreview.com/crm/ledgernest",
+      "content": "LedgerNest CRM is a customer relationship platform for real estate agents. It offers lead capture from portals and web forms, automated follow-up sequences, a mobile app, pipeline management, and calendar integration. Agents can organize contacts, set follow-up reminders, and use built-in email and text templates. LedgerNest integrates with common transaction and marketing tools. Pricing is per seat per month with a free trial available."
+    },
+    "statistics": {
+      "doc_id": "ledgernest",
+      "title": "LedgerNest CRM",
+      "url": "https://www.realtortechreview.com/crm/ledgernest",
+      "content": "LedgerNest CRM is a customer relationship platform for real estate agents. In an internal study of 4,200 agents, users increased lead-to-close conversion by 34% and saved an average of 6.5 hours per week on follow-up. It offers lead capture from portals and web forms, automated follow-up sequences that reach leads within 90 seconds, a mobile app, pipeline management, and calendar integration. Agents can organize contacts and use built-in email and text templates. LedgerNest integrates with common transaction and marketing tools. Pricing is per seat per month with a free trial available."
+    },
+    "quotations": {
+      "doc_id": "ledgernest",
+      "title": "LedgerNest CRM",
+      "url": "https://www.realtortechreview.com/crm/ledgernest",
+      "content": "LedgerNest CRM is a customer relationship platform for real estate agents. \"LedgerNest completely changed how I run my follow-ups — I close more deals with less effort,\" says one broker. \"The automation is the best I've used in fifteen years in real estate,\" says another agent. It offers lead capture from portals and web forms, automated follow-up sequences, a mobile app, pipeline management, and calendar integration. Agents can organize contacts and use built-in email and text templates. LedgerNest integrates with common transaction and marketing tools. Pricing is per seat per month with a free trial available."
+    },
+    "authority": {
+      "doc_id": "ledgernest",
+      "title": "LedgerNest CRM",
+      "url": "https://www.realtortechreview.com/crm/ledgernest",
+      "content": "LedgerNest CRM is a customer relationship platform for real estate agents. It was named Best Real Estate CRM by the National Association of Realtor Technology and is certified by the Real Estate Software Alliance. It offers lead capture from portals and web forms, automated follow-up sequences, a mobile app, pipeline management, and calendar integration. Agents can organize contacts and use built-in email and text templates. LedgerNest integrates with common transaction and marketing tools. Pricing is per seat per month with a free trial available."
+    },
+    "faq": {
+      "doc_id": "ledgernest",
+      "title": "LedgerNest CRM",
+      "url": "https://www.realtortechreview.com/crm/ledgernest",
+      "content": "LedgerNest CRM is a customer relationship platform for real estate agents. It offers lead capture, automated follow-up sequences, a mobile app, pipeline management, and calendar integration.\n\nFrequently Asked Questions\nQ: Who is LedgerNest for? A: Real estate agents and small teams managing leads and follow-ups.\nQ: Does it capture leads automatically? A: Yes, from portals and web forms.\nQ: Is there a mobile app? A: Yes, for iOS and Android.\nQ: How much does it cost? A: Per seat per month, with a free trial.\nQ: Does it integrate with other tools? A: Yes, with common transaction and marketing tools."
+    },
+    "recency": {
+      "doc_id": "ledgernest",
+      "title": "LedgerNest CRM (Updated 2026)",
+      "url": "https://www.realtortechreview.com/crm/ledgernest",
+      "content": "LedgerNest CRM is a customer relationship platform for real estate agents, updated in June 2026 with its latest features. It offers lead capture from portals and web forms, automated follow-up sequences, a redesigned 2026 mobile app, pipeline management, and calendar integration. Agents can organize contacts, set follow-up reminders, and use built-in email and text templates. LedgerNest's newest 2026 release adds updated integrations with common transaction and marketing tools. Pricing is per seat per month with a free trial available."
+    }
+  }
+}
